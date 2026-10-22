@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Notenübersicht</title>
-<meta name="theme-color" content="#2f4bd1">
+<meta name="theme-color" content="#6a4df4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Noten">
@@ -12,21 +12,21 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
 /* Layout: Anmeldeseite, danach Kopf mit Name, Schuljahr und Gesamtschnitt; drei Reiter (Eingabe, Übersicht, Einstellungen); Detailansicht pro Fach über der Übersicht. */
 :root{
-  --bg:#f1f3f8; --surface:#ffffff; --fg:#161b2e; --muted:#5d6580; --line:#d9deea;
-  --accent:#2f4bd1; --accent-fg:#ffffff; --hl:#ffe066; --warn:#a1302f; --warn-bg:#fbe7e5; --info-bg:#e6ebfb; --ok:#14804a; --ok-bg:#dff3e8;
+  --bg:#f4f1ff; --surface:#ffffff; --fg:#241c4f; --muted:#625d88; --line:#e3ddfa;
+  --accent:#6a4df4; --accent-fg:#ffffff; --hl:#ffe066; --warn:#a1302f; --warn-bg:#fbe7e5; --info-bg:#ece8ff; --ok:#14804a; --ok-bg:#dff3e8;
   --g1:#14804a; --g2:#3c8d2f; --g3:#9a6b00; --g4:#c2570c; --g5:#c42b3a; --g6:#8f1d4f;
-  --f-display:'Bricolage Grotesque','Arial Narrow',Arial,sans-serif;
-  --f-body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --f-mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --f-display:'Baloo 2','Nunito',system-ui,sans-serif;
+  --f-body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'Baloo 2','Nunito',system-ui,sans-serif;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root{
-  --bg:#0f1220; --surface:#181c30; --fg:#e8ebf7; --muted:#9aa2c0; --line:#2b3150;
-  --accent:#8ea2ff; --accent-fg:#0f1220; --hl:#f2c230; --warn:#ff8f8c; --warn-bg:#3a1c1f; --info-bg:#1f2547; --ok:#4fd18a; --ok-bg:#16301f;
+  --bg:#15112c; --surface:#201b40; --fg:#f0edff; --muted:#a9a4cf; --line:#332e5c;
+  --accent:#9d86ff; --accent-fg:#15112c; --hl:#f2c230; --warn:#ff8f8c; --warn-bg:#3a1c1f; --info-bg:#1f2547; --ok:#4fd18a; --ok-bg:#16301f;
   --g1:#4fd18a; --g2:#8fd16a; --g3:#e6b84a; --g4:#f59a56; --g5:#ff7b87; --g6:#e57ab0; color-scheme:dark}}
 
 *{box-sizing:border-box}
@@ -150,14 +150,111 @@ label.fld{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;
 details.help{font-size:14px;color:var(--muted)}
 details.help summary{cursor:pointer;color:var(--accent);font-weight:600}
 details.help p{margin:8px 0 0}
+
+/* ===== Freundliches Aussehen ===== */
+body{background:radial-gradient(900px 420px at 0% -8%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 70%),radial-gradient(700px 380px at 100% 0%,color-mix(in srgb,#ff7ab6 14%,transparent),transparent 70%),var(--bg);background-attachment:fixed}
+h2{font-weight:800;letter-spacing:0}
+.btn{border-radius:14px;border-width:2px;padding:10px 16px}
+.btn.primary{box-shadow:0 4px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.btn.primary:active{transform:translateY(2px);box-shadow:0 2px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.panel{border-radius:22px;border-width:2px}
+.hero{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 50%,#ff5fa2));color:#fff;border-radius:26px;padding:18px 20px;align-items:center;box-shadow:0 10px 24px -12px color-mix(in srgb,var(--accent) 70%,transparent)}
+.hero h1{color:#fff;font-weight:800}
+.hero .hello{font-weight:700;font-size:15px;opacity:.92}
+.hero .sub{color:rgb(255 255 255 / .9);margin:4px 0 0;font-weight:600}
+.total{border-radius:20px;border:0;color:var(--fg);box-shadow:0 4px 0 rgb(0 0 0 / .12)}
+.total .lab{letter-spacing:.03em}
+.total .big{font-size:46px;background:none;padding:0;margin-top:0}
+.mood{font-size:34px;vertical-align:4px}
+.warnbox{border-radius:16px;font-weight:600}
+.okbox{border-radius:16px}
+.tabs{background:color-mix(in srgb,var(--accent) 12%,var(--surface));border-radius:20px;padding:5px;gap:4px;position:sticky;top:6px;z-index:5;box-shadow:0 6px 16px -10px rgb(0 0 0 / .35)}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:1px;border-radius:15px;font-size:12px;padding:7px 2px;line-height:1.15;font-weight:700}
+.tabs button .ti{font-size:21px;line-height:1.1}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-fg);box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.step{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:18px;background:var(--bg);border:2px solid transparent}
+.step.bad{border-color:var(--warn)}
+.step .lab{font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px}
+.step .lab b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-size:14px}
+.ftiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (min-width:560px){.ftiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.ftile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;padding:8px 4px;border-radius:16px;border:2px solid var(--line);background:var(--surface);cursor:pointer;font-weight:700;font-size:13px;text-align:center;overflow-wrap:anywhere;line-height:1.15}
+.ftile .ic{font-size:28px;line-height:1.1}
+.ftile.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface));box-shadow:0 3px 0 var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:700;font-size:14px}
+.chip.on{border-color:var(--accent);background:var(--accent);color:var(--accent-fg)}
+.chip:disabled{opacity:.35;cursor:default}
+.gbtns{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.gbtn{aspect-ratio:1;min-height:48px;border-radius:16px;border:2px solid color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 12%,var(--surface));color:var(--c);font-family:var(--f-display);font-size:26px;font-weight:800;cursor:pointer}
+.gbtn.on{background:var(--c);color:#fff;box-shadow:0 4px 0 color-mix(in srgb,var(--c) 60%,#000);transform:translateY(-2px)}
+.prevnote{display:inline-grid;place-items:center;min-width:42px;padding:0 10px;height:28px;border-radius:999px;background:var(--c);color:#fff;font-family:var(--f-display);font-weight:800;font-size:16px}
+details.more{font-size:14px}
+details.more summary{cursor:pointer;color:var(--accent);font-weight:700;padding:4px 0}
+details.more .fld{margin-top:8px}
+.ov{grid-template-columns:minmax(0,1fr) 62px 74px 70px}
+.ov .nm{font-weight:700}
+.ov.hd{border-radius:20px 20px 0 0}
+.zr{display:grid;grid-template-columns:minmax(0,1fr) 70px 78px 78px;gap:6px;padding:10px 14px;align-items:center;border-top:1px solid var(--line)}
+.zr:first-child{border-top:0}
+.zr.hd{font-size:12px;font-weight:700;color:var(--muted);background:var(--bg);border-radius:20px 20px 0 0}
+.zr.sum{font-weight:800;background:color-mix(in srgb,var(--accent) 8%,var(--surface));border-radius:0 0 20px 20px}
+.zr .num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.zsel{width:100%;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:6px 4px;font-size:16px;font-weight:700;text-align:center}
+.zv{font-weight:800;font-size:18px}
+@media (max-width:460px){.zr{grid-template-columns:minmax(0,1fr) 54px 64px 64px;padding:10px;gap:4px}}
+.ycard .sub2{color:var(--muted);font-size:14px}
+.badge{border-radius:18px;border-width:2px}
+.empty{border-radius:22px;border-width:2px}
+.foot{margin-top:4px}
+#login h1{font-size:38px}
+#login .card{border-radius:22px;border-width:2px}
+.cntbtn{border-width:2px}
+.tl{border-radius:0}
+
+/* ===== Ausdruck (A4) ===== */
+#printArea{display:none}
+@media print{
+  @page{size:A4;margin:12mm}
+  :root{--bg:#fff;--surface:#fff;--fg:#1c1840;--muted:#5d5a7d;--line:#d8d4ee;--accent:#6a4df4;--accent-fg:#fff;
+    --g1:#14804a;--g2:#3c8d2f;--g3:#9a6b00;--g4:#c2570c;--g5:#c42b3a;--g6:#8f1d4f;color-scheme:light}
+  html,body{background:#fff!important;color:var(--fg);padding:0!important;font-size:11pt}
+  body>*:not(#printArea){display:none!important}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea{display:block;font-family:var(--f-body)}
+  #printArea h1{font-family:var(--f-display);font-size:26pt;margin:2mm 0 0;line-height:1.1}
+  #printArea h2{font-family:var(--f-display);font-size:15pt;margin:0 0 2mm}
+  .pr-head{display:flex;justify-content:space-between;align-items:center;gap:8mm;padding:6mm 7mm;border-radius:6mm;color:#fff;background:linear-gradient(135deg,#6a4df4,#e0509a)}
+  .pr-head h1{color:#fff}
+  .pr-kicker{font-weight:700;opacity:.9;font-size:10pt}
+  .pr-total{background:#fff;color:var(--fg);border-radius:5mm;padding:3mm 6mm;text-align:center;font-size:9pt;font-weight:700}
+  .pr-total b{display:block;font-family:var(--f-display);font-size:24pt;line-height:1.1}
+  .pr-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:5mm 0}
+  .pr-meta div{border:.4mm solid var(--line);border-radius:3mm;padding:2mm 3mm;font-weight:700;font-size:11pt}
+  .pr-meta span{display:block;font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .pr-t{width:100%;border-collapse:separate;border-spacing:0;font-size:10pt}
+  .pr-t th{background:#ece8ff;color:#3b2fa0;text-align:left;padding:2.2mm 2.5mm;font-size:8.5pt;vertical-align:bottom}
+  .pr-t th:first-child{border-radius:3mm 0 0 0}.pr-t th:last-child{border-radius:0 3mm 0 0}
+  .pr-t td{padding:2.4mm 2.5mm;border-bottom:.3mm solid var(--line);vertical-align:middle}
+  .pr-t tr{break-inside:avoid}
+  .pr-t .pf{font-weight:800;white-space:nowrap}
+  .pr-t .pn{text-align:center;font-family:var(--f-display);font-weight:800;font-size:12pt;white-space:nowrap}
+  .pr-t .pe{text-align:center;color:var(--muted);padding:8mm}
+  .pr-t .ps td{background:#f5f2ff;font-weight:800}
+  .pc{display:inline-flex;align-items:baseline;gap:1.2mm;margin:0 1.5mm 1.5mm 0;padding:.6mm 2.2mm;border-radius:99px;border:.3mm solid var(--c);color:var(--c);white-space:nowrap}
+  .pc b{font-family:var(--f-display);font-size:11pt}
+  .pc i{font-style:normal;font-size:8pt;color:var(--muted)}
+  .pr-year{margin-top:6mm;break-inside:avoid}
+  .pr-foot{margin-top:6mm;font-size:8pt;color:var(--muted);text-align:center}
+}
 </style>
 </head>
 <body>
 
 <div id="login" hidden>
   <div>
-    <h1>Notenübersicht</h1>
-    <p class="hint" id="loginSub">Bitte melde dich an.</p>
+    <h1>Meine Noten 📚</h1>
+    <p class="hint" id="loginSub">Schön, dass du da bist. Bitte melde dich an.</p>
   </div>
   <form class="card" id="loginForm" novalidate>
     <label class="fld">E-Mail
@@ -179,9 +276,10 @@ details.help p{margin:8px 0 0}
 </div>
 
 <div class="wrap" id="app" hidden>
-  <div class="head">
+  <div class="head hero">
     <div>
-      <h1>Notenübersicht</h1>
+      <div class="hello" id="hello"></div>
+      <h1>Meine Noten</h1>
       <p class="sub" id="sub"></p>
     </div>
     <div class="total" id="total"></div>
@@ -190,19 +288,23 @@ details.help p{margin:8px 0 0}
   <div id="warn"></div>
 
   <div class="tabs" role="tablist" aria-label="Ansicht">
-    <button type="button" role="tab" id="tabE" data-view="eingabe" aria-selected="true">Eingabe</button>
-    <button type="button" role="tab" id="tabU" data-view="uebersicht" aria-selected="false">Übersicht</button>
-    <button type="button" role="tab" id="tabS" data-view="einst" aria-selected="false">Einstellungen</button>
+    <button type="button" role="tab" id="tabE" data-view="eingabe" aria-selected="true"><span class="ti" aria-hidden="true">✏️</span>Eintragen</button>
+    <button type="button" role="tab" id="tabU" data-view="uebersicht" aria-selected="false"><span class="ti" aria-hidden="true">📊</span>Übersicht</button>
+    <button type="button" role="tab" id="tabZ" data-view="zeugnis" aria-selected="false"><span class="ti" aria-hidden="true">🏆</span>Zeugnisse</button>
+    <button type="button" role="tab" id="tabS" data-view="einst" aria-selected="false"><span class="ti" aria-hidden="true">⚙️</span>Einstellungen</button>
   </div>
 
   <div id="viewEingabe" class="stack"></div>
   <div id="viewUebersicht" class="stack" hidden></div>
   <div id="viewDetail" class="stack" hidden></div>
+  <div id="viewZeugnis" class="stack" hidden></div>
   <div id="viewEinst" class="stack" hidden></div>
 
   <div id="msg" role="status" aria-live="polite"></div>
   <div class="foot"><span id="foot"></span><button class="btn small" type="button" id="logoutBtn">Abmelden</button></div>
 </div>
+
+<div id="printArea" aria-hidden="true"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
@@ -234,14 +336,14 @@ catch (e) { db = getFirestore(app); }
 (function(){
   var GRADES=[{l:'1',v:1},{l:'1-',v:1.25},{l:'2+',v:1.75},{l:'2',v:2},{l:'2-',v:2.25},{l:'3+',v:2.75},{l:'3',v:3},{l:'3-',v:3.25},
               {l:'4+',v:3.75},{l:'4',v:4},{l:'4-',v:4.25},{l:'5+',v:4.75},{l:'5',v:5},{l:'5-',v:5.25},{l:'6',v:6}];
-  var ARTEN=[{k:'sa',l:'Schulaufgabe',w:2},{k:'ex',l:'Test / Ex',w:1},{k:'mdl',l:'Mündlich',w:1},{k:'ref',l:'Referat',w:1}];
+  var ARTEN=[{k:'sa',l:'Schulaufgabe',w:2,e:'📝',s:'SA'},{k:'ex',l:'Test / Ex',w:1,e:'⚡',s:'Ex'},{k:'mdl',l:'Mündlich',w:1,e:'💬',s:'mdl'},{k:'ref',l:'Referat',w:1,e:'🎤',s:'Ref'}];
   var GEWICHTE=[0.5,1,1.5,2,3];
   var VORSCHLAG=['Deutsch','Mathematik','Englisch','Französisch','Physik','Chemie','Biologie','Geschichte','Geografie','Sport','Musik','Kunst'];
-  var HASH={eingabe:'eingabe',uebersicht:'uebersicht',einstellungen:'einst',einst:'einst'};
+  var HASH={eingabe:'eingabe',uebersicht:'uebersicht',zeugnis:'zeugnis',zeugnisse:'zeugnis',einstellungen:'einst',einst:'einst'};
 
   var D={meta:{name:'',schuljahr:''},faecher:[],noten:[]};
   var ui={view:'eingabe',detail:null,listFach:'alle',role:'none',me:null,sig:null,entryOk:false,flash:'',forceNext:false};
-  var draft={fach:'',art:'sa',wert:'',w:2,datum:''};
+  var draft={fach:'',art:'sa',wert:'',base:'',mod:'',w:2,datum:''};
   var goal={fach:'',ziel:2,w:2};
   var armed={}, unsubs=[], loaded={faecher:false,noten:false};
   var $=function(id){return document.getElementById(id)};
@@ -353,7 +455,7 @@ catch (e) { db = getFirestore(app); }
   function showApp(){$('login').hidden=true;$('app').hidden=false}
   function showNoAccess(){
     showApp();
-    $('viewEingabe').hidden=false;$('viewUebersicht').hidden=true;$('viewDetail').hidden=true;$('viewEinst').hidden=true;
+    $('viewEingabe').hidden=false;$('viewUebersicht').hidden=true;$('viewDetail').hidden=true;$('viewEinst').hidden=true;$('viewZeugnis').hidden=true;
     document.querySelector('.tabs').hidden=true;
     $('viewEingabe').innerHTML='<div class="empty"><strong>Kein Zugriff</strong>Dieses Konto ist für die Notenübersicht nicht freigegeben. Melde dich mit dem richtigen Konto an.</div>';
   }
@@ -397,54 +499,87 @@ catch (e) { db = getFirestore(app); }
     var h=(location.hash||'').replace('#','');
     ui.view=HASH[h]||'eingabe';
     if(!isAdmin()&&ui.view==='einst')ui.view='eingabe';
-    ui.detail=null;draft={fach:'',art:'sa',wert:'',w:2,datum:''};
+    ui.detail=null;draft={fach:'',art:'sa',wert:'',base:'',mod:'',w:2,datum:''};
     showApp();startListeners();render(true);
   });
 
   /* ---------- Kopf ---------- */
+  function icon(name){
+    var n=(name||'').toLowerCase();
+    var m=[['deutsch','📖'],['mathe','🧮'],['englisch','🇬🇧'],['franz','🇫🇷'],['spanisch','🇪🇸'],['italien','🇮🇹'],['latein','🏛️'],['physik','⚡'],['chemie','🧪'],['bio','🌱'],['geschichte','🏰'],['geograf','🌍'],['geograph','🌍'],['erdkunde','🌍'],['sport','⚽'],['musik','🎵'],['kunst','🎨'],['informatik','💻'],['it','💻'],['religion','🕊️'],['ethik','🕊️'],['wirtschaft','💶'],['sozial','⚖️'],['werken','🔧'],['technik','🔧'],['ernährung','🍎'],['haushalt','🍳'],['natur','🔬'],['hsu','🔬'],['wr','💶']];
+    for(var i=0;i<m.length;i++){if(m[i][0].length<=2?n===m[i][0]:n.indexOf(m[i][0])>=0)return m[i][1]}
+    return '📚';
+  }
+  function vorname(){return (D.meta.name||'').trim().split(/\s+/)[0]||''}
+  function klasseOf(y){return ((D.meta.klassen||{})[y])||''}
+  function mood(a){return a<=1.5?'🤩':a<=2.5?'😄':a<=3.5?'🙂':a<=4.5?'😬':'💪'}
   function renderHead(){
-    var bits=[];if(D.meta.name)bits.push(esc(D.meta.name));bits.push('Schuljahr '+esc(curYear()));
+    var vn=vorname();
+    $('hello').textContent=isAdmin()?(vn?'Noten von '+vn+' 👀':'Noten-Übersicht 👀'):(vn?'Hallo '+vn+'! 👋':'Hallo! 👋');
+    var bits=[];
+    if(D.meta.name)bits.push(esc(D.meta.name));
+    if(D.meta.schule)bits.push(esc(D.meta.schule));
+    if(klasseOf(curYear()))bits.push('Klasse '+esc(klasseOf(curYear())));
+    bits.push('Schuljahr '+esc(curYear()));
     $('sub').innerHTML=bits.join(' · ');
     $('foot').textContent='Angemeldet als '+(isAdmin()?'Admin':(D.meta.name||'Anwender'))+'.';
     var avgs=[];D.faecher.forEach(function(f){var s=sums(f.id);if(s.avg!=null)avgs.push({f:f,a:s.avg})});
     var el=$('total');
     if(!avgs.length){
-      el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">–</div><div class="small">Erscheint, sobald Noten eingetragen sind.</div>';
+      el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">–</div><div class="small">Kommt, sobald die erste Note drin ist.</div>';
       $('warn').innerHTML='';return;
     }
     var m=avgs.reduce(function(a,b){return a+b.a},0)/avgs.length;
     var cnt=[0,0,0,0,0,0,0];
     avgs.forEach(function(x){cnt[Math.min(6,Math.max(1,Math.round(x.a)))]++});
     var seg='';for(var g=1;g<=6;g++)if(cnt[g])seg+='<i style="width:'+(cnt[g]/avgs.length*100)+'%;background:var(--g'+g+')"></i>';
-    el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">'+fmt(m)+'</div>'
+    el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">'+fmt(m)+' <span class="mood" aria-hidden="true">'+mood(m)+'</span></div>'
       +'<div class="small">aus '+avgs.length+(avgs.length>1?' Fächern':' Fach')+'</div><div class="dist" aria-hidden="true">'+seg+'</div>';
-    var bad=avgs.filter(function(x){return x.a>=4.5}).map(function(x){return esc(x.f.name)+' ('+fmt(x.a)+')'});
-    $('warn').innerHTML=bad.length?'<div class="warnbox">Im roten Bereich (Schnitt ab 4,5): '+bad.join(', ')+'</div>':'';
+    var bad=avgs.filter(function(x){return x.a>=4.5}).map(function(x){return icon(x.f.name)+' '+esc(x.f.name)+' ('+fmt(x.a)+')'});
+    $('warn').innerHTML=bad.length?'<div class="warnbox">⚠️ Hier lohnt sich ein genauer Blick (Schnitt ab 4,5): '+bad.join(', ')+'</div>':'';
   }
 
   /* ---------- Eingabe ---------- */
+  function hasG(b,m){return GRADES.some(function(g){return g.l===b+m})}
+  function syncWert(){
+    var l=draft.base?draft.base+(draft.mod||''):'';
+    var g=GRADES.filter(function(x){return x.l===l})[0];
+    draft.wert=g?String(g.v):'';
+  }
   function renderEntry(){
     var v=$('viewEingabe');
     if(!draft.datum)draft.datum=today();
     ui.sig=fachSig();ui.entryOk=true;
     if(!D.faecher.length){
-      v.innerHTML='<div class="empty"><strong>Noch keine Fächer angelegt</strong>'+(isAdmin()?'Lege zuerst in den Einstellungen die Fächer an. Danach kannst du hier Noten eintragen.<br><button class="btn primary" type="button" data-go="einst">Zu den Einstellungen</button>':'Die Fächer legt der Admin an. Sobald sie da sind, kannst du hier Noten eintragen.')+'</div><div id="recent"></div>';
+      v.innerHTML='<div class="empty"><strong>Noch keine Fächer angelegt 🙈</strong>'+(isAdmin()?'Lege zuerst in den Einstellungen die Fächer an. Danach kannst du hier Noten eintragen.<br><button class="btn primary" type="button" data-go="einst">Zu den Einstellungen</button>':'Die Fächer legt der Admin an. Sobald sie da sind, kannst du hier Noten eintragen.')+'</div><div id="recent"></div>';
       renderRecent();return;
     }
-    var fo='<option value="">Fach wählen</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(f.id===draft.fach?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
-    var ao=ARTEN.map(function(a){return '<option value="'+a.k+'"'+(a.k===draft.art?' selected':'')+'>'+a.l+'</option>'}).join('');
-    var wo='<option value="">Note wählen</option>'+GRADES.map(function(g){return '<option value="'+g.v+'"'+(String(g.v)===draft.wert?' selected':'')+'>Note '+g.l+'</option>'}).join('');
+    var tiles=sortF().map(function(f){
+      var on=f.id===draft.fach;
+      return '<button type="button" class="ftile'+(on?' on':'')+'" data-set="fach" data-v="'+f.id+'" aria-pressed="'+on+'"><span class="ic" aria-hidden="true">'+icon(f.name)+'</span><span class="nm">'+esc(f.name)+'</span></button>';
+    }).join('');
+    var chips=ARTEN.map(function(a){
+      var on=a.k===draft.art;
+      return '<button type="button" class="chip'+(on?' on':'')+'" data-set="art" data-v="'+a.k+'" aria-pressed="'+on+'"><span aria-hidden="true">'+a.e+'</span> '+a.l+'</button>';
+    }).join('');
+    var gb=[1,2,3,4,5,6].map(function(n){
+      var on=draft.base===String(n);
+      return '<button type="button" class="gbtn'+(on?' on':'')+'" style="--c:var(--g'+n+')" data-set="base" data-v="'+n+'" aria-pressed="'+on+'" aria-label="Note '+n+'">'+n+'</button>';
+    }).join('');
+    var mods=[['+','＋ Plus'],['','Genau'],['-','－ Minus']].map(function(m){
+      var ok=!!draft.base&&hasG(draft.base,m[0]),on=ok&&(draft.mod||'')===m[0];
+      return '<button type="button" class="chip'+(on?' on':'')+'" data-set="mod" data-v="'+m[0]+'" aria-pressed="'+on+'"'+(ok?'':' disabled')+'>'+m[1]+'</button>';
+    }).join('');
     var go=GEWICHTE.map(function(w){return '<option value="'+w+'"'+(w===draft.w?' selected':'')+'>Zählt x'+String(w).replace('.',',')+'</option>'}).join('');
-    v.innerHTML='<form id="entry" class="panel pad stack" novalidate><h2>Neue Note eintragen</h2>'
-      +'<div class="fgrid">'
-      +'<label class="fld full" id="l-fach">Fach<select id="e-fach" data-d="fach">'+fo+'</select></label>'
-      +'<label class="fld">Art der Note<select id="e-art" data-d="art">'+ao+'</select></label>'
-      +'<label class="fld" id="l-wert">Note<select id="e-wert" data-d="wert">'+wo+'</select></label>'
-      +'<label class="fld">Datum<input type="date" id="e-datum" data-d="datum" value="'+esc(draft.datum)+'"></label>'
-      +'<label class="fld">Gewicht<select id="e-w" data-d="w">'+go+'</select></label>'
-      +'</div>'
+    var prev=draft.wert?'<span class="prevnote" style="--c:'+gColor(Number(draft.wert))+'">'+gradeLabel(Number(draft.wert))+'</span>':'';
+    v.innerHTML='<form id="entry" class="panel pad stack" novalidate><h2>Neue Note eintragen ✏️</h2>'
+      +'<div class="step" id="l-fach"><div class="lab"><b>1</b> Welches Fach?</div><div class="ftiles">'+tiles+'</div></div>'
+      +'<div class="step"><div class="lab"><b>2</b> Was war es?</div><div class="chips">'+chips+'</div></div>'
+      +'<div class="step" id="l-wert"><div class="lab"><b>3</b> Welche Note? '+prev+'</div><div class="gbtns">'+gb+'</div><div class="chips mods">'+mods+'</div></div>'
+      +'<div class="step"><div class="lab"><b>4</b> Wann war das?</div><label class="fld"><input type="date" id="e-datum" data-d="datum" value="'+esc(draft.datum)+'" aria-label="Datum"></label></div>'
+      +'<details class="more"><summary>Mehr Optionen</summary><label class="fld">Wie viel zählt die Note?<select id="e-w" data-d="w">'+go+'</select></label></details>'
       +(ui.flash?'<div class="okbox">'+esc(ui.flash)+'</div>':'')
-      +'<button class="btn primary submit" type="submit">Note speichern</button></form>'
+      +'<button class="btn primary submit" type="submit">Note speichern 💾</button></form>'
       +'<div id="recent"></div>';
     renderRecent();
   }
@@ -452,9 +587,9 @@ catch (e) { db = getFirestore(app); }
     var el=$('recent');if(!el)return;
     var rows=D.noten.slice().sort(function(a,b){return (b.created||0)-(a.created||0)}).slice(0,6);
     if(!rows.length){el.innerHTML='';return}
-    el.innerHTML='<div class="stack"><h2>Zuletzt eingetragen</h2><div class="panel">'+rows.map(function(n){
+    el.innerHTML='<div class="stack"><h2>Zuletzt eingetragen 🕒</h2><div class="panel">'+rows.map(function(n){
       var f=fach(n.fach),a=art(n.art),isA=armed[n.id];
-      return '<div class="row"><div><div class="t">'+esc(f?f.name:'(Fach gelöscht)')+' · <span class="gtag" style="color:'+gColor(n.wert)+'">Note '+gradeLabel(n.wert)+'</span></div>'
+      return '<div class="row"><div><div class="t"><span aria-hidden="true">'+icon(f?f.name:'')+'</span> '+esc(f?f.name:'(Fach gelöscht)')+' · <span class="gtag" style="color:'+gColor(n.wert)+'">Note '+gradeLabel(n.wert)+'</span></div>'
         +'<div class="m">'+esc(a.l)+', x'+String(n.gewicht).replace('.',',')+', '+fmtDate(n.datum)+(n.von?', von '+esc(vonLabel(n.von)):'')+'</div></div>'
         +(canDel(n)?'<button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="delnote" data-n="'+n.id+'">'+(isA?'Löschen?':'Löschen')+'</button>':'<span></span>')+'</div>';
     }).join('')+'</div></div>';
@@ -462,13 +597,12 @@ catch (e) { db = getFirestore(app); }
   $('viewEingabe').addEventListener('change',function(e){
     var k=e.target.dataset.d;if(!k)return;
     if(k==='w')draft.w=Number(e.target.value);else draft[k]=e.target.value;
-    if(k==='art'){draft.w=art(draft.art).w;var w=$('e-w');if(w)w.value=String(draft.w)}
-    if(e.target.parentNode)e.target.parentNode.classList.remove('bad');
     ui.flash='';
   });
   $('viewEingabe').addEventListener('submit',function(e){
     e.preventDefault();if(ui.role==='none')return;
     var bad=false;
+    $('l-fach').classList.remove('bad');$('l-wert').classList.remove('bad');
     if(!draft.fach){$('l-fach').classList.add('bad');bad=true}
     if(draft.wert===''){$('l-wert').classList.add('bad');bad=true}
     if(!draft.datum){bad=true}
@@ -479,13 +613,20 @@ catch (e) { db = getFirestore(app); }
     put('note',nn).then(function(ok){
       if(ok&&ui.role==='user')pushAdmin('Neue Note eingetragen',(D.meta.name||'Anwender')+' hat eingetragen: '+noteText(nn)+' am '+fmtDate(nn.datum));
     });
-    ui.flash=(f?f.name:'Fach')+': Note '+gradeLabel(Number(draft.wert))+' gespeichert'+(sj&&sj!==curYear()?'. Sie gehört zum Schuljahr '+sj+' und erscheint dort in der Übersicht.':'.');
-    draft.fach='';draft.wert='';draft.datum=today();
+    ui.flash=(nn.wert<=2.5?'🎉 ':'👍 ')+(f?f.name:'Fach')+': Note '+gradeLabel(nn.wert)+' gespeichert'+(sj&&sj!==curYear()?'. Sie gehört zum Schuljahr '+sj+' und erscheint dort in der Übersicht.':'.');
+    draft.fach='';draft.wert='';draft.base='';draft.mod='';draft.datum=today();
     renderEntry();
   });
   $('viewEingabe').addEventListener('click',function(e){
     var g=e.target.closest('[data-go]');if(g){ui.view=HASH[g.dataset.go]||'eingabe';render(true);return}
-    var b=e.target.closest('[data-act="delnote"]');if(b)removeNote(b.dataset.n);
+    var b=e.target.closest('[data-act="delnote"]');if(b){removeNote(b.dataset.n);return}
+    var s=e.target.closest('[data-set]');if(!s||s.disabled)return;
+    var k=s.dataset.set,val=s.dataset.v;
+    if(k==='fach')draft.fach=draft.fach===val?'':val;
+    else if(k==='art'){draft.art=val;draft.w=art(val).w}
+    else if(k==='base'){draft.base=val;if(!hasG(val,draft.mod||''))draft.mod=''}
+    else if(k==='mod')draft.mod=val;
+    syncWert();ui.flash='';renderEntry();
   });
 
   /* ---------- Übersicht ---------- */
@@ -501,11 +642,11 @@ catch (e) { db = getFirestore(app); }
   }
   function renderUeb(){
     var el=$('viewUebersicht');
-    if(!D.faecher.length){el.innerHTML='<div class="empty"><strong>Noch keine Noten</strong>Sobald Fächer angelegt und Noten eingetragen sind, erscheint hier die Übersicht.</div>';return}
+    if(!D.faecher.length){el.innerHTML='<div class="empty"><strong>Noch keine Noten 🌱</strong>Sobald Fächer angelegt und Noten eingetragen sind, erscheint hier die Übersicht.</div>';return}
     var ov='<div class="ov hd"><span>Fach</span><span class="num">Noten</span><span class="num">Schnitt</span><span class="num">Zeugnis</span></div>';
     sortF().forEach(function(f){
       var s=sums(f.id),n=yearNoten().filter(function(x){return x.fach===f.id}).length;
-      ov+='<div class="ov" data-fach="'+f.id+'"><span>'+esc(f.name)+'</span><span class="num"><button type="button" class="cntbtn" data-detail="'+f.id+'" aria-label="Details zu '+esc(f.name)+'">'+n+' ›</button></span><span class="num" style="color:'+(s.avg==null?'inherit':gColor(s.avg))+'">'+(s.avg==null?'–':fmt(s.avg))+'</span><span class="num">'+(s.avg==null?'–':Math.min(6,Math.max(1,Math.round(s.avg))))+'</span></div>';
+      ov+='<div class="ov" data-fach="'+f.id+'"><span class="nm"><span aria-hidden="true">'+icon(f.name)+'</span> '+esc(f.name)+'</span><span class="num"><button type="button" class="cntbtn" data-detail="'+f.id+'" aria-label="Details zu '+esc(f.name)+'">'+n+' ›</button></span><span class="num" style="color:'+(s.avg==null?'inherit':gColor(s.avg))+'">'+(s.avg==null?'–':fmt(s.avg))+'</span><span class="num">'+(s.avg==null?'–':Math.min(6,Math.max(1,Math.round(s.avg))))+'</span></div>';
     });
     var fOpts='<option value="alle">Alle Fächer</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(ui.listFach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
     var rows=sortNoten(yearNoten().filter(function(n){return ui.listFach==='alle'||n.fach===ui.listFach})).reverse();
@@ -524,9 +665,9 @@ catch (e) { db = getFirestore(app); }
     var gf='<option value="">Fach wählen</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(goal.fach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
     var gz=[1,2,3,4].map(function(z){return '<option value="'+z+'"'+(goal.ziel===z?' selected':'')+'>Zeugnisnote '+z+'</option>'}).join('');
     var gw=GEWICHTE.map(function(w){return '<option value="'+w+'"'+(goal.w===w?' selected':'')+'>Arbeit zählt x'+String(w).replace('.',',')+'</option>'}).join('');
-    el.innerHTML='<div class="stack"><h2>Fächer im Überblick</h2><div class="panel">'+ov+'</div></div>'
-      +'<div class="stack"><div class="toolrow"><h2>Alle Noten nach Datum</h2><select id="listFach" aria-label="Fach filtern">'+fOpts+'</select></div><div class="panel">'+list+'</div></div>'
-      +'<div class="stack"><h2>Wunschnote berechnen</h2><div class="panel pad stack"><div class="fgrid"><label class="fld full">Fach<select data-goal="fach">'+gf+'</select></label>'
+    el.innerHTML='<div class="stack"><div class="toolrow"><h2>📊 Fächer im Überblick</h2><button class="btn small" type="button" data-act="print-blatt" data-y="'+esc(curYear())+'">🖨️ Drucken</button></div><div class="panel">'+ov+'</div></div>'
+      +'<div class="stack"><div class="toolrow"><h2>🗓️ Alle Noten nach Datum</h2><select id="listFach" aria-label="Fach filtern">'+fOpts+'</select></div><div class="panel">'+list+'</div></div>'
+      +'<div class="stack"><h2>🎯 Wunschnote berechnen</h2><div class="panel pad stack"><div class="fgrid"><label class="fld full">Fach<select data-goal="fach">'+gf+'</select></label>'
       +'<label class="fld">Ziel<select data-goal="ziel">'+gz+'</select></label><label class="fld">Gewicht<select data-goal="w">'+gw+'</select></label></div>'
       +'<div class="result">'+goalResult()+'</div></div></div>';
   }
@@ -580,7 +721,7 @@ catch (e) { db = getFirestore(app); }
     if(!f){ui.detail=null;render(true);return}
     var s=sums(f.id),ns=sortNoten(yearNoten().filter(function(n){return n.fach===f.id}));
     var h='<button class="btn small back" type="button" data-back>‹ Zur Übersicht</button>'
-      +'<div class="dhead"><div><h2>'+esc(f.name)+'</h2><div class="sub2">Schuljahr '+esc(curYear())+' · '+ns.length+(ns.length===1?' Note':' Noten')+'</div></div>'
+      +'<div class="dhead"><div><h2><span aria-hidden="true">'+icon(f.name)+'</span> '+esc(f.name)+'</h2><div class="sub2">Schuljahr '+esc(curYear())+' · '+ns.length+(ns.length===1?' Note':' Noten')+'</div></div>'
       +(s.avg==null?'':'<div class="dbig"><div class="v" style="color:'+gColor(s.avg)+'">'+fmt(s.avg)+'</div><div class="z">Zeugnisnote ca. '+Math.min(6,Math.max(1,Math.round(s.avg)))+'</div></div>')+'</div>';
     if(!ns.length){el.innerHTML=h+'<div class="empty"><strong>Noch keine Note</strong>In diesem Fach gibt es im Schuljahr '+esc(curYear())+' noch keine Note.</div>';return}
     h+='<div class="panel chart">'+chartSvg(ns,s.avg)+'</div>';
@@ -594,7 +735,7 @@ catch (e) { db = getFirestore(app); }
     tiles+='<div class="tile"><div class="k">Beste Note</div><div class="v" style="color:'+gColor(best.wert)+'">'+gradeLabel(best.wert)+'</div><div class="s">'+esc(art(best.art).l)+', '+fmtDate(best.datum)+'</div></div>'
       +'<div class="tile"><div class="k">Schwächste Note</div><div class="v" style="color:'+gColor(worst.wert)+'">'+gradeLabel(worst.wert)+'</div><div class="s">'+esc(art(worst.art).l)+', '+fmtDate(worst.datum)+'</div></div>';
     h+='<div class="tiles">'+tiles+'</div>';
-    h+='<div class="stack"><h2>Alle Noten</h2><div class="panel">'+ns.slice().reverse().map(function(n){
+    h+='<div class="stack"><h2>🗒️ Alle Noten</h2><div class="panel">'+ns.slice().reverse().map(function(n){
       var p=dateParts(n.datum),a=art(n.art),isA=armed[n.id];
       return '<div class="tl"><div class="dt"><div class="wd">'+p.wd+'</div><div class="day">'+p.day+'</div><div class="mon">'+p.mon+'</div></div>'
         +'<div><div class="art">'+esc(a.l)+'<span class="pill">zählt x'+String(n.gewicht).replace('.',',')+'</span></div>'
@@ -609,6 +750,122 @@ catch (e) { db = getFirestore(app); }
     var b=e.target.closest('[data-act="delnote"]');if(b)removeNote(b.dataset.n);
   });
 
+  /* ---------- Zeugnisse und Verlauf ---------- */
+  function yearsAll(){
+    var m={};
+    D.noten.forEach(function(n){var y=schuljahrOf(n.datum);if(y)m[y]=1});
+    Object.keys(D.meta.zeugnis||{}).forEach(function(y){m[y]=1});
+    Object.keys(D.meta.klassen||{}).forEach(function(y){m[y]=1});
+    m[curYear()]=1;
+    return Object.keys(m).sort();
+  }
+  function zget(y,t,fid){var z=(D.meta.zeugnis||{})[y],v=z&&z[t]&&z[t][fid];return typeof v==='number'?v:null}
+  function zavg(y,t){var S=0,c=0;D.faecher.forEach(function(f){var v=zget(y,t,f.id);if(v!=null){S+=v;c++}});return c?S/c:null}
+  function yNoten(y,fid){return sortNoten(D.noten.filter(function(n){return n.fach===fid&&schuljahrOf(n.datum)===y}))}
+  function yAvg(y,fid){var S=0,W=0;yNoten(y,fid).forEach(function(n){S+=n.wert*n.gewicht;W+=n.gewicht});return W?S/W:null}
+  function yTotal(y){var S=0,c=0;D.faecher.forEach(function(f){var a=yAvg(y,f.id);if(a!=null){S+=a;c++}});return c?S/c:null}
+  function gcol(v){return v==null?'inherit':gColor(v)}
+  function verlaufSvg(pts){
+    var W=640,H=220,L=34,R=22,T=18,B=40,iw=W-L-R,ih=H-T-B,n=pts.length;
+    function Y(v){return T+(Math.min(6,Math.max(1,v))-1)/5*ih}
+    function X(i){return n===1?L+iw/2:L+i*iw/(n-1)}
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Verlauf der Zeugnisschnitte">';
+    for(var g=1;g<=6;g++){var y=Y(g);s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" style="stroke:var(--line)" stroke-width="1"/><text x="'+(L-10)+'" y="'+(y+4)+'" text-anchor="end" font-size="12" style="fill:var(--muted)">'+g+'</text>'}
+    if(n>1)s+='<polyline points="'+pts.map(function(p,i){return X(i)+','+Y(p.v)}).join(' ')+'" fill="none" style="stroke:var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>';
+    pts.forEach(function(p,i){
+      s+='<circle cx="'+X(i)+'" cy="'+Y(p.v)+'" r="15" style="fill:'+gColor(p.v)+';stroke:var(--surface)" stroke-width="3"/>'
+        +'<text x="'+X(i)+'" y="'+(Y(p.v)+4)+'" text-anchor="middle" font-size="11.5" font-weight="700" style="fill:#fff">'+fmt(p.v,1)+'</text>'
+        +'<text x="'+X(i)+'" y="'+(H-14)+'" text-anchor="middle" font-size="11.5" style="fill:var(--muted)">'+p.l+'</text>';
+    });
+    return s+'</svg>';
+  }
+  function zsel(y,t,f){
+    var cur=zget(y,t,f.id);
+    if(!isAdmin())return '<span class="zv" style="color:'+gcol(cur)+'">'+(cur==null?'–':cur)+'</span>';
+    return '<select class="zsel" data-z="'+t+'" data-y="'+y+'" data-f="'+f.id+'" aria-label="'+(t==='zw'?'Zwischenzeugnis':'Jahreszeugnis')+' '+esc(f.name)+'">'
+      +'<option value="">–</option>'+[1,2,3,4,5,6].map(function(g){return '<option value="'+g+'"'+(cur===g?' selected':'')+'>'+g+'</option>'}).join('')+'</select>';
+  }
+  function renderZeugnis(){
+    var el=$('viewZeugnis'),all=yearsAll(),pts=[];
+    all.forEach(function(y){
+      var a=zavg(y,'zw'),b=zavg(y,'jz'),sh=y.slice(2,4)+'/'+y.slice(5);
+      if(a!=null)pts.push({l:sh+' Zw',v:a});
+      if(b!=null)pts.push({l:sh+' Jz',v:b});
+    });
+    var h='<div class="toolrow"><h2>🏆 Zeugnisse und Verlauf</h2><button class="btn small" type="button" data-act="print-verlauf">🖨️ Gesamtverlauf drucken</button></div>';
+    h+=pts.length?'<div class="panel chart">'+verlaufSvg(pts)+'</div><p class="hint">Zw = Zwischenzeugnis, Jz = Jahreszeugnis. Die Zahlen sind die Durchschnitte der eingetragenen Zeugnisnoten.</p>'
+      :'<div class="empty"><strong>Noch keine Zeugnisnoten 📄</strong>'+(isAdmin()?'Trage unten beim Schuljahr die Noten aus dem Zwischen- und Jahreszeugnis ein. Dann entsteht hier der Verlauf über die Jahre.':'Hier erscheinen später die Noten aus Zwischen- und Jahreszeugnis.')+'</div>';
+    if(!D.faecher.length)return void(el.innerHTML=h);
+    all.slice().reverse().forEach(function(y){
+      var kl=klasseOf(y),a=zavg(y,'zw'),b=zavg(y,'jz'),t=yTotal(y);
+      h+='<div class="stack ycard"><div class="toolrow"><div style="flex:1 1 auto"><h2>🎓 Schuljahr '+y+'</h2><div class="sub2">'+(kl?'Klasse '+esc(kl):'Klasse noch nicht eingetragen')+(y===curYear()?' · aktuelles Schuljahr':'')+'</div></div>'
+        +'<button class="btn small" type="button" data-act="print-blatt" data-y="'+y+'">🖨️ Drucken</button></div><div class="panel">'
+        +'<div class="zr hd"><span>Fach</span><span class="num">Ø jetzt</span><span class="num">Zwischen</span><span class="num">Jahr</span></div>';
+      sortF().forEach(function(f){
+        var av=yAvg(y,f.id);
+        h+='<div class="zr"><span><span aria-hidden="true">'+icon(f.name)+'</span> '+esc(f.name)+'</span><span class="num" style="color:'+gcol(av)+'">'+(av==null?'–':fmt(av))+'</span><span class="num">'+zsel(y,'zw',f)+'</span><span class="num">'+zsel(y,'jz',f)+'</span></div>';
+      });
+      h+='<div class="zr sum"><span>Schnitt</span><span class="num" style="color:'+gcol(t)+'">'+(t==null?'–':fmt(t))+'</span><span class="num" style="color:'+gcol(a)+'">'+(a==null?'–':fmt(a))+'</span><span class="num" style="color:'+gcol(b)+'">'+(b==null?'–':fmt(b))+'</span></div></div></div>';
+    });
+    el.innerHTML=h;
+  }
+  $('viewZeugnis').addEventListener('change',function(e){
+    var t=e.target;if(!isAdmin()||!t.dataset.z)return;
+    var y=t.dataset.y,k=t.dataset.z,f=t.dataset.f;
+    var z=Object.assign({},D.meta.zeugnis||{});
+    var yy=Object.assign({zw:{},jz:{}},z[y]||{});
+    yy[k]=Object.assign({},yy[k]||{});
+    if(t.value==='')delete yy[k][f];else yy[k][f]=Number(t.value);
+    z[y]=yy;D.meta.zeugnis=z;
+    ui.forceNext=true;putMeta();render(true);
+  });
+
+  /* ---------- Drucken (A4) ---------- */
+  function pHead(titel,y){
+    var kl=klasseOf(y),t=yTotal(y);
+    return '<div class="pr-head"><div><div class="pr-kicker">📚 Notenübersicht</div><h1>'+titel+'</h1></div>'
+      +(t==null?'':'<div class="pr-total"><div>Gesamtschnitt</div><b>'+fmt(t)+'</b></div>')+'</div>'
+      +'<div class="pr-meta"><div><span>Name</span>'+esc(D.meta.name||'–')+'</div><div><span>Schule</span>'+esc(D.meta.schule||'–')+'</div><div><span>Klasse</span>'+esc(kl||'–')+'</div><div><span>Schuljahr</span>'+esc(y)+'</div></div>';
+  }
+  function pFoot(){return '<div class="pr-foot">Ausgedruckt am '+fmtDate(today())+' · Notenübersicht · Ø = gewichteter Durchschnitt (Schulaufgabe zählt doppelt)</div>'}
+  function printBlatt(y){
+    var rows='';
+    sortF().forEach(function(f){
+      var ns=yNoten(y,f.id),av=yAvg(y,f.id),zw=zget(y,'zw',f.id),jz=zget(y,'jz',f.id);
+      if(!ns.length&&zw==null&&jz==null)return;
+      rows+='<tr><td class="pf"><span>'+icon(f.name)+'</span> '+esc(f.name)+'</td><td>'
+        +ns.map(function(n){return '<span class="pc" style="--c:'+gColor(n.wert)+'"><b>'+gradeLabel(n.wert)+'</b><i>'+art(n.art).s+' '+shortD(n.datum)+'</i></span>'}).join('')
+        +'</td><td class="pn" style="color:'+gcol(av)+'">'+(av==null?'–':fmt(av))+'</td><td class="pn">'+(zw==null?'':zw)+'</td><td class="pn">'+(jz==null?'':jz)+'</td></tr>';
+    });
+    if(!rows)rows='<tr><td colspan="5" class="pe">In diesem Schuljahr gibt es noch keine Noten.</td></tr>';
+    return pHead('Notenblatt Schuljahr '+y,y)+'<table class="pr-t"><thead><tr><th>Fach</th><th>Einzelnoten (SA = Schulaufgabe, Ex = Test, mdl = mündlich, Ref = Referat)</th><th>Ø</th><th>Zwischen-zeugnis</th><th>Jahres-zeugnis</th></tr></thead><tbody>'+rows+'</tbody></table>'+pFoot();
+  }
+  function printVerlauf(){
+    var out='<div class="pr-head"><div><div class="pr-kicker">📚 Notenübersicht</div><h1>Zeugnis-Verlauf</h1></div></div>'
+      +'<div class="pr-meta"><div><span>Name</span>'+esc(D.meta.name||'–')+'</div><div><span>Schule</span>'+esc(D.meta.schule||'–')+'</div></div>';
+    yearsAll().forEach(function(y){
+      var any=D.faecher.some(function(f){return zget(y,'zw',f.id)!=null||zget(y,'jz',f.id)!=null});
+      if(!any&&!klasseOf(y))return;
+      var rows=sortF().map(function(f){
+        var zw=zget(y,'zw',f.id),jz=zget(y,'jz',f.id);if(zw==null&&jz==null)return '';
+        return '<tr><td class="pf"><span>'+icon(f.name)+'</span> '+esc(f.name)+'</td><td class="pn" style="color:'+gcol(zw)+'">'+(zw==null?'–':zw)+'</td><td class="pn" style="color:'+gcol(jz)+'">'+(jz==null?'–':jz)+'</td></tr>';
+      }).join('');
+      var a=zavg(y,'zw'),b=zavg(y,'jz');
+      out+='<div class="pr-year"><h2>🎓 Schuljahr '+y+(klasseOf(y)?' · Klasse '+esc(klasseOf(y)):'')+'</h2><table class="pr-t"><thead><tr><th>Fach</th><th>Zwischenzeugnis</th><th>Jahreszeugnis</th></tr></thead><tbody>'+(rows||'<tr><td colspan="3" class="pe">Noch keine Zeugnisnoten.</td></tr>')
+        +'<tr class="ps"><td>Schnitt</td><td class="pn">'+(a==null?'–':fmt(a))+'</td><td class="pn">'+(b==null?'–':fmt(b))+'</td></tr></tbody></table></div>';
+    });
+    return out+pFoot();
+  }
+  function doPrint(html){
+    $('printArea').innerHTML=html;
+    try{window.print()}catch(e){say('Drucken wird von diesem Gerät nicht unterstützt.')}
+  }
+  $('app').addEventListener('click',function(e){
+    var b=e.target.closest('[data-act^="print-"]');if(!b)return;
+    if(b.dataset.act==='print-blatt')doPrint(printBlatt(b.dataset.y||curYear()));
+    else doPrint(printVerlauf());
+  });
+
   /* ---------- Einstellungen (nur Admin) ---------- */
   function renderEinst(){
     var el=$('viewEinst');
@@ -620,15 +877,17 @@ catch (e) { db = getFirestore(app); }
     }).join('');
     var used=D.faecher.map(function(f){return f.name.toLowerCase()});
     var sug=VORSCHLAG.filter(function(v){return used.indexOf(v.toLowerCase())<0}).map(function(v){return '<button class="btn small" type="button" data-sugg="'+v+'">'+v+'</button>'}).join('');
-    el.innerHTML='<div class="panel pad stack"><h2>Schüler und Schuljahr</h2><div class="fgrid">'
-      +'<label class="fld">Name<input id="s-name" value="'+esc(D.meta.name||'')+'" maxlength="60" placeholder="Name des Schülers"></label>'
-      +'<label class="fld">Schuljahr<select id="s-jahr">'+yo+'</select></label></div>'
-      +'<p class="hint">Eine Note gehört zu dem Schuljahr, in dem ihr Datum liegt (ab August beginnt ein neues Schuljahr). Hier wählst du, welches Schuljahr angezeigt wird.</p></div>'
-      +'<div class="stack"><h2>Fächer</h2><div class="panel">'+(rows||'<div class="srow"><span class="hint">Noch kein Fach angelegt.</span></div>')
+    el.innerHTML='<div class="panel pad stack"><h2>🎒 Schüler, Schule und Schuljahr</h2><div class="fgrid">'
+      +'<label class="fld">Name des Schülers<input id="s-name" value="'+esc(D.meta.name||'')+'" maxlength="60" placeholder="Vor- und Nachname"></label>'
+      +'<label class="fld">Schule<input id="s-schule" value="'+esc(D.meta.schule||'')+'" maxlength="80" placeholder="z. B. Realschule Neubiberg"></label>'
+      +'<label class="fld">Schuljahr<select id="s-jahr">'+yo+'</select></label>'
+      +'<label class="fld">Klasse im Schuljahr '+esc(curYear())+'<input id="s-klasse" value="'+esc(klasseOf(curYear()))+'" maxlength="12" placeholder="z. B. 7a"></label></div>'
+      +'<p class="hint">Eine Note gehört zu dem Schuljahr, in dem ihr Datum liegt (ab August beginnt ein neues Schuljahr). Die Klasse trägst du für jedes Schuljahr einzeln ein, sie wird im Verlauf und auf dem Ausdruck angezeigt.</p></div>'
+      +'<div class="stack"><h2>📚 Fächer</h2><div class="panel">'+(rows||'<div class="srow"><span class="hint">Noch kein Fach angelegt.</span></div>')
       +'<div class="addrow"><input class="inp" id="s-new" list="subjList" placeholder="Neues Fach, z. B. Mathematik" maxlength="40" aria-label="Neues Fach"><datalist id="subjList">'+VORSCHLAG.map(function(v){return '<option value="'+v+'">'}).join('')+'</datalist>'
       +'<button class="btn primary" type="button" id="s-add">Fach anlegen</button></div>'
       +(sug?'<div class="sugg">'+sug+'</div>':'')+'</div></div>'
-      +'<div class="panel pad stack"><h2>Benachrichtigung aufs Handy</h2>'
+      +'<div class="panel pad stack"><h2>🔔 Benachrichtigung aufs Handy</h2>'
       +(D.meta.ntfyTopic
         ?'<p class="hint">Aktiv. Sobald '+esc(D.meta.name||'der Anwender')+' eine Note einträgt, bekommst du eine Nachricht mit Fach und Note. Installiere dazu die kostenlose App <b>ntfy</b> und abonniere dort dieses Thema:</p><p><code id="s-topic" style="user-select:all;word-break:break-all">'+esc(D.meta.ntfyTopic)+'</code></p>'
           +'<p class="hint">Die Nachricht läuft über den Dienst ntfy.sh (Server außerhalb deiner Datenbank). Teile das Thema mit niemandem.</p>'
@@ -636,7 +895,7 @@ catch (e) { db = getFirestore(app); }
         :'<p class="hint">Aus. Wenn du einschaltest, bekommst du eine Nachricht aufs Handy, sobald '+esc(D.meta.name||'der Anwender')+' eine Note einträgt (Fach, Note, Art). Dafür wird die Nachricht über den Dienst ntfy.sh geschickt.</p>'
           +'<div class="toolrow"><button class="btn primary" type="button" data-act="push-on">Einschalten</button></div>')
       +'</div>'
-      +'<div class="panel pad stack"><h2>Sicherung</h2><p class="hint">Die Datenbank legt keine automatischen Sicherungen an. Lade die Noten hin und wieder als Datei herunter.</p>'
+      +'<div class="panel pad stack"><h2>💾 Sicherung</h2><p class="hint">Die Datenbank legt keine automatischen Sicherungen an. Lade die Noten hin und wieder als Datei herunter.</p>'
       +'<div class="toolrow"><button class="btn" type="button" data-act="exp-csv">Noten als Tabelle (CSV)</button><button class="btn" type="button" data-act="exp-json">Vollständige Sicherung (JSON)</button></div></div>';
   }
   function addSubject(name){
@@ -651,9 +910,9 @@ catch (e) { db = getFirestore(app); }
   }
   function csvCell(v){v=String(v==null?'':v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
   function exportCsv(){
-    var lines=[['Datum','Schuljahr','Fach','Art','Note','Gewicht','Eingetragen von'].join(';')];
+    var lines=[['Datum','Schuljahr','Klasse','Fach','Art','Note','Gewicht','Eingetragen von'].join(';')];
     sortNoten(D.noten).forEach(function(n){var f=fach(n.fach);
-      lines.push([fmtDate(n.datum),schuljahrOf(n.datum),f?f.name:'',art(n.art).l,String(n.wert).replace('.',','),String(n.gewicht).replace('.',','),vonLabel(n.von)].map(csvCell).join(';'))});
+      lines.push([fmtDate(n.datum),schuljahrOf(n.datum),klasseOf(schuljahrOf(n.datum)),f?f.name:'',art(n.art).l,String(n.wert).replace('.',','),String(n.gewicht).replace('.',','),vonLabel(n.von)].map(csvCell).join(';'))});
     download('noten-'+today()+'.csv','﻿'+lines.join('\r\n'),'text/csv;charset=utf-8');
   }
   function exportJson(){
@@ -688,6 +947,8 @@ catch (e) { db = getFirestore(app); }
   $('viewEinst').addEventListener('change',function(e){
     var t=e.target;if(!isAdmin())return;
     if(t.id==='s-name'){D.meta.name=t.value.trim();putMeta();renderHead();return}
+    if(t.id==='s-schule'){D.meta.schule=t.value.trim();putMeta();renderHead();return}
+    if(t.id==='s-klasse'){D.meta.klassen=Object.assign({},D.meta.klassen||{});D.meta.klassen[curYear()]=t.value.trim();putMeta();renderHead();return}
     if(t.id==='s-jahr'){D.meta.schuljahr=t.value;ui.forceNext=true;putMeta();render(true);return}
     if(t.dataset.ren){
       var nm=t.value.trim(),f=fach(t.dataset.ren);
@@ -714,16 +975,17 @@ catch (e) { db = getFirestore(app); }
     if(!isAdmin()&&ui.view==='einst')ui.view='eingabe';
     $('tabS').hidden=!isAdmin();
     var v=ui.view;
-    $('tabE').setAttribute('aria-selected',v==='eingabe');$('tabU').setAttribute('aria-selected',v==='uebersicht');$('tabS').setAttribute('aria-selected',v==='einst');
+    $('tabE').setAttribute('aria-selected',v==='eingabe');$('tabU').setAttribute('aria-selected',v==='uebersicht');$('tabZ').setAttribute('aria-selected',v==='zeugnis');$('tabS').setAttribute('aria-selected',v==='einst');
     if(v!=='uebersicht')ui.detail=null;
-    $('viewEingabe').hidden=v!=='eingabe';$('viewUebersicht').hidden=v!=='uebersicht'||!!ui.detail;$('viewDetail').hidden=!(v==='uebersicht'&&ui.detail);$('viewEinst').hidden=v!=='einst';
+    $('viewEingabe').hidden=v!=='eingabe';$('viewUebersicht').hidden=v!=='uebersicht'||!!ui.detail;$('viewDetail').hidden=!(v==='uebersicht'&&ui.detail);$('viewEinst').hidden=v!=='einst';$('viewZeugnis').hidden=v!=='zeugnis';
     if(v==='eingabe'){
       if(force||!ui.entryOk||ui.sig!==fachSig()){if(force||!busy('viewEingabe'))renderEntry()}
       else renderRecent();
     }else if(v==='uebersicht'){
       if(ui.detail){if(force||!busy('viewDetail'))renderDetail()}
       else if(force||!busy('viewUebersicht'))renderUeb();
-    }else if(v==='einst'){if(force||!busy('viewEinst'))renderEinst()}
+    }else if(v==='zeugnis'){if(force||!busy('viewZeugnis'))renderZeugnis()}
+    else if(v==='einst'){if(force||!busy('viewEinst'))renderEinst()}
   }
 
   if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}

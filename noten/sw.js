@@ -1,6 +1,6 @@
 /* Zwischenspeicher für die App-Hülle, damit sie auch bei schlechtem Netz startet.
    Datenbank- und Anmelde-Anfragen laufen nie über diesen Speicher. */
-const CACHE = 'noten-v1';
+const CACHE = 'noten-v2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
