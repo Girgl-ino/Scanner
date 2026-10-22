@@ -1,6 +1,6 @@
 /* Zwischenspeicher für die App-Hülle, damit sie auch bei schlechtem Netz startet.
    Datenbank- und Anmelde-Anfragen laufen nie über diesen Speicher. */
-const CACHE = 'noten-v4';
+const CACHE = 'noten-v5';
 const SHELL = ['./', 'index.html', 'jspdf.umd.min.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
@@ -28,7 +28,7 @@ self.addEventListener('fetch', (e) => {
   if (isPage) {
     // Seite: zuerst Netz, damit Updates sofort ankommen
     e.respondWith(
-      fetch(req).then((res) => {
+      fetch(req, { cache: 'no-cache' }).then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));
         return res;
