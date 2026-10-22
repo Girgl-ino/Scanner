@@ -213,6 +213,14 @@ details.more .fld{margin-top:8px}
 .tl{border-radius:0}
 
 #toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;max-width:min(92vw,420px);background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:16px;font-weight:700;font-size:14.5px;box-shadow:0 10px 30px rgb(0 0 0 / .35);text-align:center}
+.srow{grid-template-columns:minmax(0,1fr) auto auto}
+.srow .inp{grid-column:1/-1}
+.fa{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--muted)}
+.fa input,.wrow input{width:22px;height:22px;accent-color:var(--accent)}
+.wlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.wrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:14px;background:var(--bg);font-weight:700;cursor:pointer}
+.wiz{border-color:var(--accent)}
+.warnbox.setup{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--fg)}
 </style>
 </head>
 <body>
@@ -317,7 +325,7 @@ catch (e) { db = getFirestore(app); }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function fmt(n,d){return n.toFixed(d==null?2:d).replace('.',',')}
   function newId(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-  var VERSION='3d';
+  var VERSION='4';
   var toastT=null;
   function say(t){$('msg').textContent=t||''}
   function toast(t,ms){var el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){el.hidden=true},ms||5000)}
@@ -336,6 +344,26 @@ catch (e) { db = getFirestore(app); }
   function art(k){return ARTEN.filter(function(a){return a.k===k})[0]||ARTEN[1]}
   function fach(id){return D.faecher.filter(function(f){return f.id===id})[0]}
   function sortF(){return D.faecher.slice().sort(function(a,b){return a.name.localeCompare(b.name,'de')})}
+  /* Fächer je Schuljahr: ohne eigene Liste gilt die Liste des letzten Schuljahrs davor, sonst alle Fächer.
+     Ein Fach mit Noten in dem Jahr bleibt immer sichtbar. */
+  function fachList(y){
+    var fj=D.meta.fachJahre||{};
+    if(fj[y])return fj[y];
+    var ys=Object.keys(fj).filter(function(k){return k<y}).sort();
+    return ys.length?fj[ys[ys.length-1]]:null;
+  }
+  function fachActive(y){
+    var l=fachList(y),has={};
+    D.noten.forEach(function(n){if(schuljahrOf(n.datum)===y)has[n.fach]=1});
+    var z=(D.meta.zeugnis||{})[y]||{};
+    ['zw','jz'].forEach(function(t){Object.keys(z[t]||{}).forEach(function(k){has[k]=1})});
+    return D.faecher.filter(function(f){return !l||l.indexOf(f.id)>=0||has[f.id]});
+  }
+  function sortFY(y){return fachActive(y).sort(function(a,b){return a.name.localeCompare(b.name,'de')})}
+  function needsSetup(){
+    if(!isAdmin()||(D.meta.fachJahre||{})[curYear()])return false;
+    return yearsAll().some(function(y){return y<curYear()});
+  }
   function sortNoten(a){return a.slice().sort(function(x,y){var dx=x.datum||'',dy=y.datum||'';return dx<dy?-1:dx>dy?1:(x.created||0)-(y.created||0)})}
   function yearNoten(){var y=curYear();return D.noten.filter(function(n){return schuljahrOf(n.datum)===y})}
   function sums(fid){var S=0,W=0;yearNoten().forEach(function(n){if(n.fach===fid){S+=n.wert*n.gewicht;W+=n.gewicht}});return {S:S,W:W,avg:W?S/W:null}}
@@ -482,6 +510,7 @@ catch (e) { db = getFirestore(app); }
   function vorname(){return (D.meta.name||'').trim().split(/\s+/)[0]||''}
   function klasseOf(y){return ((D.meta.klassen||{})[y])||''}
   function mood(a){return a<=1.5?'🤩':a<=2.5?'😄':a<=3.5?'🙂':a<=4.5?'😬':'💪'}
+  $('warn').addEventListener('click',function(e){var g=e.target.closest('[data-go]');if(g){ui.view=HASH[g.dataset.go]||'eingabe';ui.detail=null;render(true);try{window.scrollTo(0,0)}catch(x){}}});
   function renderHead(){
     var vn=vorname();
     $('hello').textContent=isAdmin()?(vn?'Noten von '+vn+' 👀':'Noten-Übersicht 👀'):(vn?'Hallo '+vn+'! 👋':'Hallo! 👋');
@@ -492,11 +521,12 @@ catch (e) { db = getFirestore(app); }
     bits.push('Schuljahr '+esc(curYear()));
     $('sub').innerHTML=bits.join(' · ');
     $('foot').textContent='Angemeldet als '+(isAdmin()?'Admin':(D.meta.name||'Anwender'))+' · Version '+VERSION;
-    var avgs=[];D.faecher.forEach(function(f){var s=sums(f.id);if(s.avg!=null)avgs.push({f:f,a:s.avg})});
+    var avgs=[];fachActive(curYear()).forEach(function(f){var s=sums(f.id);if(s.avg!=null)avgs.push({f:f,a:s.avg})});
     var el=$('total');
+    var nb=needsSetup()?'<div class="warnbox setup">🎒 Neues Schuljahr '+esc(curYear())+': Welche Fächer hat '+esc(vorname()||'er')+' jetzt? <button class="btn small" type="button" data-go="einst">Jetzt festlegen</button></div>':'';
     if(!avgs.length){
       el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">–</div><div class="small">Kommt, sobald die erste Note drin ist.</div>';
-      $('warn').innerHTML='';return;
+      $('warn').innerHTML=nb;return;
     }
     var m=avgs.reduce(function(a,b){return a+b.a},0)/avgs.length;
     var cnt=[0,0,0,0,0,0,0];
@@ -505,7 +535,7 @@ catch (e) { db = getFirestore(app); }
     el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">'+fmt(m)+' <span class="mood" aria-hidden="true">'+mood(m)+'</span></div>'
       +'<div class="small">aus '+avgs.length+(avgs.length>1?' Fächern':' Fach')+'</div><div class="dist" aria-hidden="true">'+seg+'</div>';
     var bad=avgs.filter(function(x){return x.a>=4.5}).map(function(x){return icon(x.f.name)+' '+esc(x.f.name)+' ('+fmt(x.a)+')'});
-    $('warn').innerHTML=bad.length?'<div class="warnbox">⚠️ Hier lohnt sich ein genauer Blick (Schnitt ab 4,5): '+bad.join(', ')+'</div>':'';
+    $('warn').innerHTML=nb+(bad.length?'<div class="warnbox">⚠️ Hier lohnt sich ein genauer Blick (Schnitt ab 4,5): '+bad.join(', ')+'</div>':'');
   }
 
   /* ---------- Eingabe ---------- */
@@ -523,7 +553,7 @@ catch (e) { db = getFirestore(app); }
       v.innerHTML='<div class="empty"><strong>Noch keine Fächer angelegt 🙈</strong>'+(isAdmin()?'Lege zuerst in den Einstellungen die Fächer an. Danach kannst du hier Noten eintragen.<br><button class="btn primary" type="button" data-go="einst">Zu den Einstellungen</button>':'Die Fächer legt der Admin an. Sobald sie da sind, kannst du hier Noten eintragen.')+'</div><div id="recent"></div>';
       renderRecent();return;
     }
-    var tiles=sortF().map(function(f){
+    var tiles=sortFY(curYear()).map(function(f){
       var on=f.id===draft.fach;
       return '<button type="button" class="ftile'+(on?' on':'')+'" data-set="fach" data-v="'+f.id+'" aria-pressed="'+on+'"><span class="ic" aria-hidden="true">'+icon(f.name)+'</span><span class="nm">'+esc(f.name)+'</span></button>';
     }).join('');
@@ -613,11 +643,11 @@ catch (e) { db = getFirestore(app); }
     var el=$('viewUebersicht');
     if(!D.faecher.length){el.innerHTML='<div class="empty"><strong>Noch keine Noten 🌱</strong>Sobald Fächer angelegt und Noten eingetragen sind, erscheint hier die Übersicht.</div>';return}
     var ov='<div class="ov hd"><span>Fach</span><span class="num">Noten</span><span class="num">Schnitt</span><span class="num">Zeugnis</span></div>';
-    sortF().forEach(function(f){
+    sortFY(curYear()).forEach(function(f){
       var s=sums(f.id),n=yearNoten().filter(function(x){return x.fach===f.id}).length;
       ov+='<div class="ov" data-fach="'+f.id+'"><span class="nm"><span aria-hidden="true">'+icon(f.name)+'</span> '+esc(f.name)+'</span><span class="num"><button type="button" class="cntbtn" data-detail="'+f.id+'" aria-label="Details zu '+esc(f.name)+'">'+n+' ›</button></span><span class="num" style="color:'+(s.avg==null?'inherit':gColor(s.avg))+'">'+(s.avg==null?'–':fmt(s.avg))+'</span><span class="num">'+(s.avg==null?'–':Math.min(6,Math.max(1,Math.round(s.avg))))+'</span></div>';
     });
-    var fOpts='<option value="alle">Alle Fächer</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(ui.listFach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
+    var fOpts='<option value="alle">Alle Fächer</option>'+sortFY(curYear()).map(function(f){return '<option value="'+f.id+'"'+(ui.listFach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
     var rows=sortNoten(yearNoten().filter(function(n){return ui.listFach==='alle'||n.fach===ui.listFach})).reverse();
     var ro=!isAdmin();
     var list=rows.length?rows.map(function(n){
@@ -631,7 +661,7 @@ catch (e) { db = getFirestore(app); }
         +(canDel(n)?'<button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="delnote" data-n="'+n.id+'">'+(isA?'Löschen?':'Löschen')+'</button>':'<span></span>')
         +'</div>';
     }).join(''):'<div class="lrow"><span class="m">Keine Noten in dieser Auswahl.</span></div>';
-    var gf='<option value="">Fach wählen</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(goal.fach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
+    var gf='<option value="">Fach wählen</option>'+sortFY(curYear()).map(function(f){return '<option value="'+f.id+'"'+(goal.fach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
     var gz=[1,2,3,4].map(function(z){return '<option value="'+z+'"'+(goal.ziel===z?' selected':'')+'>Zeugnisnote '+z+'</option>'}).join('');
     var gw=GEWICHTE.map(function(w){return '<option value="'+w+'"'+(goal.w===w?' selected':'')+'>Arbeit zählt x'+String(w).replace('.',',')+'</option>'}).join('');
     el.innerHTML='<div class="stack"><div class="toolrow"><h2>📊 Fächer im Überblick</h2><button class="btn small" type="button" data-act="print-blatt" data-y="'+esc(curYear())+'">📄 PDF / Drucken</button></div><div class="panel">'+ov+'</div></div>'
@@ -765,7 +795,7 @@ catch (e) { db = getFirestore(app); }
       h+='<div class="stack ycard"><div class="toolrow"><div style="flex:1 1 auto"><h2>🎓 Schuljahr '+y+'</h2><div class="sub2">'+(kl?'Klasse '+esc(kl):'Klasse noch nicht eingetragen')+(y===curYear()?' · aktuelles Schuljahr':'')+'</div></div>'
         +'<button class="btn small" type="button" data-act="print-blatt" data-y="'+y+'">📄 PDF / Drucken</button></div><div class="panel">'
         +'<div class="zr hd"><span>Fach</span><span class="num">Ø jetzt</span><span class="num">Zwischen</span><span class="num">Jahr</span></div>';
-      sortF().forEach(function(f){
+      sortFY(y).forEach(function(f){
         var av=yAvg(y,f.id);
         h+='<div class="zr"><span><span aria-hidden="true">'+icon(f.name)+'</span> '+esc(f.name)+'</span><span class="num" style="color:'+gcol(av)+'">'+(av==null?'–':fmt(av))+'</span><span class="num">'+zsel(y,'zw',f)+'</span><span class="num">'+zsel(y,'jz',f)+'</span></div>';
       });
@@ -966,18 +996,28 @@ catch (e) { db = getFirestore(app); }
     var yo=yearList().map(function(y){return '<option value="'+y+'"'+(y===curYear()?' selected':'')+'>Schuljahr '+y+'</option>'}).join('');
     var rows=sortF().map(function(f){
       var n=D.noten.filter(function(x){return x.fach===f.id}).length,isA=armed[f.id];
-      return '<div class="srow" data-id="'+f.id+'"><input class="inp" data-ren="'+f.id+'" value="'+esc(f.name)+'" maxlength="40" aria-label="Name des Fachs"><span class="cnt">'+n+' Note'+(n===1?'':'n')+'</span>'
+      var on=fachActive(curYear()).some(function(x){return x.id===f.id});
+      var locked=yearNoten().some(function(x){return x.fach===f.id});
+      return '<div class="srow" data-id="'+f.id+'"><input class="inp" data-ren="'+f.id+'" value="'+esc(f.name)+'" maxlength="40" aria-label="Name des Fachs"><label class="fa"><input type="checkbox" data-fy="'+f.id+'"'+(on?' checked':'')+(locked?' disabled':'')+'> '+(locked?'hat Noten in '+esc(curYear()):'im Schuljahr '+esc(curYear()))+'</label><span class="cnt">'+n+' Note'+(n===1?'':'n')+'</span>'
         +'<button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="delfach" data-f="'+f.id+'">'+(isA?(n?'Mit '+n+' Noten löschen?':'Löschen?'):'Löschen')+'</button></div>';
     }).join('');
     var used=D.faecher.map(function(f){return f.name.toLowerCase()});
     var sug=VORSCHLAG.filter(function(v){return used.indexOf(v.toLowerCase())<0}).map(function(v){return '<button class="btn small" type="button" data-sugg="'+v+'">'+v+'</button>'}).join('');
-    el.innerHTML='<div class="panel pad stack"><h2>🎒 Schüler, Schule und Schuljahr</h2><div class="fgrid">'
+    var wiz='';
+    if(needsSetup()){
+      var act=fachActive(curYear()).map(function(f){return f.id});
+      wiz='<div class="panel pad stack wiz"><h2>🎒 Neues Schuljahr '+esc(curYear())+' einrichten</h2><p class="hint">Setze ein Häkchen bei jedem Fach, das '+esc(vorname()||'er')+' in diesem Schuljahr hat. Alles Weitere bleibt, auch die alten Noten. Fehlt ein Fach, lege es unten unter „Fächer“ neu an.</p>'
+        +'<div class="wlist">'+sortF().map(function(f){return '<label class="wrow"><input type="checkbox" data-wf="'+f.id+'"'+(act.indexOf(f.id)>=0?' checked':'')+'> <span>'+icon(f.name)+' '+esc(f.name)+'</span></label>'}).join('')+'</div>'
+        +'<label class="fld">Klasse im Schuljahr '+esc(curYear())+'<input id="w-klasse" value="'+esc(klasseOf(curYear()))+'" maxlength="12" placeholder="z. B. 6a"></label>'
+        +'<button class="btn primary submit" type="button" data-act="wiz-ok">Schuljahr starten 🚀</button></div>';
+    }
+    el.innerHTML=wiz+'<div class="panel pad stack"><h2>🎒 Schüler, Schule und Schuljahr</h2><div class="fgrid">'
       +'<label class="fld">Name des Schülers<input id="s-name" value="'+esc(D.meta.name||'')+'" maxlength="60" placeholder="Vor- und Nachname"></label>'
       +'<label class="fld">Schule<input id="s-schule" value="'+esc(D.meta.schule||'')+'" maxlength="80" placeholder="z. B. Realschule Neubiberg"></label>'
       +'<label class="fld">Schuljahr<select id="s-jahr">'+yo+'</select></label>'
       +'<label class="fld">Klasse im Schuljahr '+esc(curYear())+'<input id="s-klasse" value="'+esc(klasseOf(curYear()))+'" maxlength="12" placeholder="z. B. 7a"></label></div>'
       +'<p class="hint">Eine Note gehört zu dem Schuljahr, in dem ihr Datum liegt (ab August beginnt ein neues Schuljahr). Die Klasse trägst du für jedes Schuljahr einzeln ein, sie wird im Verlauf und auf dem Ausdruck angezeigt.</p></div>'
-      +'<div class="stack"><h2>📚 Fächer</h2><div class="panel">'+(rows||'<div class="srow"><span class="hint">Noch kein Fach angelegt.</span></div>')
+      +'<div class="stack"><h2>📚 Fächer</h2><p class="hint">Das Häkchen bestimmt, welche Fächer in diesem Schuljahr erscheinen. Alte Noten bleiben erhalten. „Löschen“ entfernt ein Fach mit allen Noten aus allen Schuljahren.</p><div class="panel">'+(rows||'<div class="srow"><span class="hint">Noch kein Fach angelegt.</span></div>')
       +'<div class="addrow"><input class="inp" id="s-new" list="subjList" placeholder="Neues Fach, z. B. Mathematik" maxlength="40" aria-label="Neues Fach"><datalist id="subjList">'+VORSCHLAG.map(function(v){return '<option value="'+v+'">'}).join('')+'</datalist>'
       +'<button class="btn primary" type="button" id="s-add">Fach anlegen</button></div>'
       +(sug?'<div class="sugg">'+sug+'</div>':'')+'</div></div>'
@@ -995,7 +1035,18 @@ catch (e) { db = getFirestore(app); }
   function addSubject(name){
     name=(name||'').trim();if(!name||!isAdmin())return;
     if(D.faecher.some(function(f){return f.name.toLowerCase()===name.toLowerCase()})){say('Dieses Fach gibt es schon.');return}
-    say('');ui.forceNext=true;put('fach',{id:newId(),name:name,created:Date.now(),von:ui.me});
+    say('');ui.forceNext=true;
+    var nid=newId();
+    if(fachList(curYear())){
+      var fj=Object.assign({},D.meta.fachJahre||{});
+      fj[curYear()]=fachActive(curYear()).map(function(f){return f.id}).concat([nid]);
+      D.meta.fachJahre=fj;putMeta();
+    }
+    put('fach',{id:nid,name:name,created:Date.now(),von:ui.me});
+  }
+  function setYearList(ids){
+    var fj=Object.assign({},D.meta.fachJahre||{});fj[curYear()]=ids;D.meta.fachJahre=fj;
+    ui.forceNext=true;putMeta();render(true);
   }
   function download(name,text,type){
     var blob=new Blob([text],{type:type}),a=document.createElement('a');
@@ -1014,6 +1065,12 @@ catch (e) { db = getFirestore(app); }
   }
   $('viewEinst').addEventListener('click',async function(e){
     if(!isAdmin())return;
+    if(e.target.closest('[data-act="wiz-ok"]')){
+      var ids=[].map.call(document.querySelectorAll('#viewEinst [data-wf]:checked'),function(c){return c.dataset.wf});
+      var k=($('w-klasse')||{}).value;
+      if(k&&k.trim()){D.meta.klassen=Object.assign({},D.meta.klassen||{});D.meta.klassen[curYear()]=k.trim()}
+      setYearList(ids);return;
+    }
     var sg=e.target.closest('[data-sugg]');if(sg){addSubject(sg.dataset.sugg);return}
     if(e.target.id==='s-add'){addSubject($('s-new').value);return}
     var pa=e.target.closest('[data-act^="push-"]');
@@ -1040,6 +1097,12 @@ catch (e) { db = getFirestore(app); }
   $('viewEinst').addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='s-new'){e.preventDefault();addSubject(e.target.value)}});
   $('viewEinst').addEventListener('change',function(e){
     var t=e.target;if(!isAdmin())return;
+    if(t.dataset.fy){
+      var cur=fachActive(curYear()).map(function(f){return f.id}).filter(function(i){return i!==t.dataset.fy});
+      if(t.checked)cur.push(t.dataset.fy);
+      setYearList(cur);return;
+    }
+    if(t.dataset.wf)return;
     if(t.id==='s-name'){D.meta.name=t.value.trim();putMeta();renderHead();return}
     if(t.id==='s-schule'){D.meta.schule=t.value.trim();putMeta();renderHead();return}
     if(t.id==='s-klasse'){D.meta.klassen=Object.assign({},D.meta.klassen||{});D.meta.klassen[curYear()]=t.value.trim();putMeta();renderHead();return}
