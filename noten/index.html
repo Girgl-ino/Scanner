@@ -221,6 +221,28 @@ details.more .fld{margin-top:8px}
 .wrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:14px;background:var(--bg);font-weight:700;cursor:pointer}
 .wiz{border-color:var(--accent)}
 .warnbox.setup{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--fg)}
+.glabel{font-weight:800;font-size:13px;color:var(--muted);margin:6px 0 -2px;letter-spacing:.02em}
+.ov.gh,.zr.gh{display:block;font-size:12.5px;font-weight:800;color:var(--hd2,var(--accent));background:color-mix(in srgb,var(--accent) 8%,var(--surface));padding:6px 14px}
+.srow .inp{grid-column:1/3}
+.srow .grsel{grid-column:3;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:8px 6px;font-size:14px;font-weight:700;min-width:0;max-width:150px}
+.wichtig{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.wline{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.wline .wt{flex:1 1 200px;min-width:0}
+.wback{padding:10px;border-radius:14px;background:color-mix(in srgb,#f5a623 16%,var(--surface))}
+.cd{flex:0 0 auto;min-width:84px;text-align:center;padding:6px 10px;border-radius:999px;font-weight:800;font-size:13.5px;background:var(--bg);border:2px solid var(--line)}
+.cd.hot{background:var(--warn);color:#fff;border-color:var(--warn)}
+.cd.warm{background:#ffe3b3;color:#6b3d00;border-color:#f5a623}
+.cd.cool{background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}
+.cd.past{background:var(--bg);color:var(--muted)}
+.stoff{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;color:var(--fg);margin-top:2px}
+.stoff.none{color:var(--muted);font-style:italic}
+.tcard{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:12px 14px}
+.tbody{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:4px}
+.tt{font-weight:800;font-size:16px}
+.tm{color:var(--muted);font-size:13px}
+textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;width:100%;resize:vertical;font-size:16px}
+.tabs button{font-size:11px;padding:7px 0}
+@media (max-width:420px){.tcard{flex-direction:column}}
 </style>
 </head>
 <body>
@@ -264,13 +286,15 @@ details.more .fld{margin-top:8px}
   <div class="tabs" role="tablist" aria-label="Ansicht">
     <button type="button" role="tab" id="tabE" data-view="eingabe" aria-selected="true"><span class="ti" aria-hidden="true">✏️</span>Eintragen</button>
     <button type="button" role="tab" id="tabU" data-view="uebersicht" aria-selected="false"><span class="ti" aria-hidden="true">📊</span>Übersicht</button>
+    <button type="button" role="tab" id="tabT" data-view="termine" aria-selected="false"><span class="ti" aria-hidden="true">📅</span>Termine</button>
     <button type="button" role="tab" id="tabZ" data-view="zeugnis" aria-selected="false"><span class="ti" aria-hidden="true">🏆</span>Zeugnisse</button>
-    <button type="button" role="tab" id="tabS" data-view="einst" aria-selected="false"><span class="ti" aria-hidden="true">⚙️</span>Einstellungen</button>
+    <button type="button" role="tab" id="tabS" data-view="einst" aria-selected="false"><span class="ti" aria-hidden="true">⚙️</span>Optionen</button>
   </div>
 
   <div id="viewEingabe" class="stack"></div>
   <div id="viewUebersicht" class="stack" hidden></div>
   <div id="viewDetail" class="stack" hidden></div>
+  <div id="viewTermine" class="stack" hidden></div>
   <div id="viewZeugnis" class="stack" hidden></div>
   <div id="viewEinst" class="stack" hidden></div>
 
@@ -310,12 +334,12 @@ catch (e) { db = getFirestore(app); }
 (function(){
   var GRADES=[{l:'1',v:1},{l:'1-',v:1.25},{l:'2+',v:1.75},{l:'2',v:2},{l:'2-',v:2.25},{l:'3+',v:2.75},{l:'3',v:3},{l:'3-',v:3.25},
               {l:'4+',v:3.75},{l:'4',v:4},{l:'4-',v:4.25},{l:'5+',v:4.75},{l:'5',v:5},{l:'5-',v:5.25},{l:'6',v:6}];
-  var ARTEN=[{k:'sa',l:'Schulaufgabe',w:2,e:'📝',s:'SA'},{k:'ex',l:'Test / Ex',w:1,e:'⚡',s:'Ex'},{k:'mdl',l:'Mündlich',w:1,e:'💬',s:'mdl'},{k:'ref',l:'Referat',w:1,e:'🎤',s:'Ref'}];
+  var ARTEN=[{k:'sa',l:'Schulaufgabe',w:2,e:'📝',s:'SA'},{k:'ex',l:'Kurzarbeit / Ex',w:1,e:'⚡',s:'Ex'},{k:'mdl',l:'Mündlich',w:1,e:'💬',s:'mdl'},{k:'ref',l:'Referat',w:1,e:'🎤',s:'Ref'}];
   var GEWICHTE=[0.5,1,1.5,2,3];
   var VORSCHLAG=['Deutsch','Mathematik','Englisch','Französisch','Physik','Chemie','Biologie','Geschichte','Geografie','Sport','Musik','Kunst'];
-  var HASH={eingabe:'eingabe',uebersicht:'uebersicht',zeugnis:'zeugnis',zeugnisse:'zeugnis',einstellungen:'einst',einst:'einst'};
+  var HASH={eingabe:'eingabe',uebersicht:'uebersicht',termine:'termine',zeugnis:'zeugnis',zeugnisse:'zeugnis',einstellungen:'einst',einst:'einst'};
 
-  var D={meta:{name:'',schuljahr:''},faecher:[],noten:[]};
+  var D={meta:{name:'',schuljahr:''},faecher:[],noten:[],termine:[]};
   var ui={view:'eingabe',detail:null,listFach:'alle',role:'none',me:null,sig:null,entryOk:false,flash:'',forceNext:false};
   var draft={fach:'',art:'sa',wert:'',base:'',mod:'',w:2,datum:''};
   var goal={fach:'',ziel:2,w:2};
@@ -325,7 +349,7 @@ catch (e) { db = getFirestore(app); }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function fmt(n,d){return n.toFixed(d==null?2:d).replace('.',',')}
   function newId(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-  var VERSION='5';
+  var VERSION='6';
   var toastT=null;
   function say(t){$('msg').textContent=t||''}
   function toast(t,ms){var el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){el.hidden=true},ms||5000)}
@@ -343,7 +367,18 @@ catch (e) { db = getFirestore(app); }
   function gColor(v){var r=Math.min(6,Math.max(1,Math.round(v)));return 'var(--g'+r+')'}
   function art(k){return ARTEN.filter(function(a){return a.k===k})[0]||ARTEN[1]}
   function fach(id){return D.faecher.filter(function(f){return f.id===id})[0]}
-  function sortF(){return D.faecher.slice().sort(function(a,b){return a.name.localeCompare(b.name,'de')})}
+  /* Gruppen: Hauptfächer, Lernfächer, Musische Fächer. Standard nach Fachname, im Admin je Fach änderbar. */
+  var GRUPPEN=[{k:'haupt',l:'Hauptfächer',e:'⭐'},{k:'lern',l:'Lernfächer',e:'📘'},{k:'musisch',l:'Musische Fächer',e:'🎨'}];
+  function gruppeOf(f){
+    if(f&&f.gruppe&&GRUPPEN.some(function(g){return g.k===f.gruppe}))return f.gruppe;
+    var n=((f&&f.name)||'').toLowerCase();
+    if(/^(deutsch|mathe|englisch)/.test(n))return 'haupt';
+    if(/^(musik|kunst|sport)/.test(n))return 'musisch';
+    return 'lern';
+  }
+  function gIdx(f){for(var i=0;i<GRUPPEN.length;i++)if(GRUPPEN[i].k===gruppeOf(f))return i;return 1}
+  function cmpF(a,b){return gIdx(a)-gIdx(b)||a.name.localeCompare(b.name,'de')}
+  function sortF(){return D.faecher.slice().sort(cmpF)}
   /* Fächer je Schuljahr: ohne eigene Liste gilt die Liste des letzten Schuljahrs davor, sonst alle Fächer.
      Ein Fach mit Noten in dem Jahr bleibt immer sichtbar. */
   function fachList(y){
@@ -359,7 +394,7 @@ catch (e) { db = getFirestore(app); }
     ['zw','jz'].forEach(function(t){Object.keys(z[t]||{}).forEach(function(k){has[k]=1})});
     return D.faecher.filter(function(f){return !l||l.indexOf(f.id)>=0||has[f.id]});
   }
-  function sortFY(y){return fachActive(y).sort(function(a,b){return a.name.localeCompare(b.name,'de')})}
+  function sortFY(y){return fachActive(y).sort(cmpF)}
   function needsSetup(){
     if(!isAdmin()||(D.meta.fachJahre||{})[curYear()])return false;
     return yearsAll().some(function(y){return y<curYear()});
@@ -375,7 +410,7 @@ catch (e) { db = getFirestore(app); }
   function busy(id){var a=document.activeElement;return !!(a&&$(id).contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))}
 
   /* ---------- Firestore ---------- */
-  var COL={fach:'faecher',note:'noten'};
+  var COL={fach:'faecher',note:'noten',termin:'termine'};
   function fail(e){
     var c=e&&e.code||'';
     say(c==='permission-denied'?'Das darfst du nicht. Die Änderung wurde zurückgenommen.':'Speichern fehlgeschlagen ('+(c||'Fehler')+'). Bitte erneut versuchen.');
@@ -436,18 +471,20 @@ catch (e) { db = getFirestore(app); }
       else say('Verbindung zur Datenbank gestört ('+((e&&e.code)||'Fehler')+').');
     };
     var prev={faecher:null,noten:null};
-    function listen(name,key){
+    function listen(name,key,soft){
       unsubs.push(onSnapshot(collection(db,name),function(s){
+        if(soft)ui.termErr=false;
         var arr=s.docs.map(function(d){var x=d.data();x.id=d.id;return x});
         var sg=JSON.stringify(arr),changed=sg!==prev[name];prev[name]=sg;
         D[key]=arr;loaded[name]=true;
         if(name==='noten')detectNew(arr);
         /* Nur neu aufbauen, wenn sich wirklich etwas geändert hat */
         if(changed||ui.forceNext)afterSnap();
-      },onErr));
+      },soft?function(){ui.termErr=true;D[key]=[];afterSnap()}:onErr));
     }
     listen('faecher','faecher');
     listen('noten','noten');
+    listen('termine','termine',true);
     if(isAdmin()){
       /* Besuchsprotokoll: nur der Admin darf es lesen. Fehler hier dürfen die App nie sperren. */
       unsubs.push(onSnapshot(query(collection(db,'besuche'),orderBy('t','desc'),limit(300)),function(s){
@@ -476,7 +513,7 @@ catch (e) { db = getFirestore(app); }
   function showApp(){$('login').hidden=true;$('app').hidden=false}
   function showNoAccess(){
     showApp();
-    $('viewEingabe').hidden=false;$('viewUebersicht').hidden=true;$('viewDetail').hidden=true;$('viewEinst').hidden=true;$('viewZeugnis').hidden=true;
+    $('viewEingabe').hidden=false;$('viewUebersicht').hidden=true;$('viewDetail').hidden=true;$('viewEinst').hidden=true;$('viewZeugnis').hidden=true;$('viewTermine').hidden=true;
     document.querySelector('.tabs').hidden=true;
     $('viewEingabe').innerHTML='<div class="empty"><strong>Kein Zugriff</strong>Dieses Konto ist für die Notenübersicht nicht freigegeben. Melde dich mit dem richtigen Konto an.</div>';
   }
@@ -510,7 +547,7 @@ catch (e) { db = getFirestore(app); }
 
   onAuthStateChanged(auth,function(user){
     if(!user){
-      stopListeners();ui.role='none';ui.me=null;D={meta:{name:'',schuljahr:''},faecher:[],noten:[],besuche:[]};ui.besuchErr=false;
+      stopListeners();ui.role='none';ui.me=null;D={meta:{name:'',schuljahr:''},faecher:[],noten:[],besuche:[],termine:[]};ui.besuchErr=false;ui.termErr=false;
       $('l-pass').value='';showLogin();return;
     }
     ui.me=user.uid;
@@ -554,11 +591,12 @@ catch (e) { db = getFirestore(app); }
       $('warn').innerHTML=nb;return;
     }
     var m=avgs.reduce(function(a,b){return a+b.a},0)/avgs.length;
+    var hv=avgs.filter(function(x){return gruppeOf(x.f)==='haupt'});
     var cnt=[0,0,0,0,0,0,0];
     avgs.forEach(function(x){cnt[Math.min(6,Math.max(1,Math.round(x.a)))]++});
     var seg='';for(var g=1;g<=6;g++)if(cnt[g])seg+='<i style="width:'+(cnt[g]/avgs.length*100)+'%;background:var(--g'+g+')"></i>';
     el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">'+fmt(m)+' <span class="mood" aria-hidden="true">'+mood(m)+'</span></div>'
-      +'<div class="small">aus '+avgs.length+(avgs.length>1?' Fächern':' Fach')+'</div><div class="dist" aria-hidden="true">'+seg+'</div>';
+      +'<div class="small">aus '+avgs.length+(avgs.length>1?' Fächern':' Fach')+(hv.length?' · ⭐ Hauptfächer Ø '+fmt(hv.reduce(function(a,b){return a+b.a},0)/hv.length):'')+'</div><div class="dist" aria-hidden="true">'+seg+'</div>';
     var bad=avgs.filter(function(x){return x.a>=4.5}).map(function(x){return icon(x.f.name)+' '+esc(x.f.name)+' ('+fmt(x.a)+')'});
     $('warn').innerHTML=nb+(bad.length?'<div class="warnbox">⚠️ Hier lohnt sich ein genauer Blick (Schnitt ab 4,5): '+bad.join(', ')+'</div>':'');
   }
@@ -578,10 +616,7 @@ catch (e) { db = getFirestore(app); }
       v.innerHTML='<div class="empty"><strong>Noch keine Fächer angelegt 🙈</strong>'+(isAdmin()?'Lege zuerst in den Einstellungen die Fächer an. Danach kannst du hier Noten eintragen.<br><button class="btn primary" type="button" data-go="einst">Zu den Einstellungen</button>':'Die Fächer legt der Admin an. Sobald sie da sind, kannst du hier Noten eintragen.')+'</div><div id="recent"></div>';
       renderRecent();return;
     }
-    var tiles=sortFY(curYear()).map(function(f){
-      var on=f.id===draft.fach;
-      return '<button type="button" class="ftile'+(on?' on':'')+'" data-set="fach" data-v="'+f.id+'" aria-pressed="'+on+'"><span class="ic" aria-hidden="true">'+icon(f.name)+'</span><span class="nm">'+esc(f.name)+'</span></button>';
-    }).join('');
+    var tiles=groupedTiles('set',draft.fach);
     var chips=ARTEN.map(function(a){
       var on=a.k===draft.art;
       return '<button type="button" class="chip'+(on?' on':'')+'" data-set="art" data-v="'+a.k+'" aria-pressed="'+on+'"><span aria-hidden="true">'+a.e+'</span> '+a.l+'</button>';
@@ -596,8 +631,8 @@ catch (e) { db = getFirestore(app); }
     }).join('');
     var go=GEWICHTE.map(function(w){return '<option value="'+w+'"'+(w===draft.w?' selected':'')+'>Zählt x'+String(w).replace('.',',')+'</option>'}).join('');
     var prev=draft.wert?'<span class="prevnote" style="--c:'+gColor(Number(draft.wert))+'">'+gradeLabel(Number(draft.wert))+'</span>':'';
-    v.innerHTML='<form id="entry" class="panel pad stack" novalidate><h2>Neue Note eintragen ✏️</h2>'
-      +'<div class="step" id="l-fach"><div class="lab"><b>1</b> Welches Fach?</div><div class="ftiles">'+tiles+'</div></div>'
+    v.innerHTML='<div id="wichtig">'+wichtigHtml()+'</div><form id="entry" class="panel pad stack" novalidate><h2>Neue Note eintragen ✏️</h2>'
+      +'<div class="step" id="l-fach"><div class="lab"><b>1</b> Welches Fach?</div>'+tiles+'</div>'
       +'<div class="step"><div class="lab"><b>2</b> Was war es?</div><div class="chips">'+chips+'</div></div>'
       +'<div class="step" id="l-wert"><div class="lab"><b>3</b> Welche Note? '+prev+'</div><div class="gbtns">'+gb+'</div><div class="chips mods">'+mods+'</div></div>'
       +'<div class="step"><div class="lab"><b>4</b> Wann war das?</div><label class="fld"><input type="date" id="e-datum" data-d="datum" value="'+esc(draft.datum)+'" aria-label="Datum"></label></div>'
@@ -634,7 +669,9 @@ catch (e) { db = getFirestore(app); }
     say('');
     var f=fach(draft.fach),sj=schuljahrOf(draft.datum);
     var nn={id:newId(),fach:draft.fach,wert:Number(draft.wert),art:draft.art,gewicht:draft.w,datum:draft.datum,created:Date.now(),von:ui.me};
+    var tref=ui.termRef;ui.termRef=null;
     put('note',nn).then(function(ok){
+      if(ok&&tref){var tt=tById(tref);if(tt&&tt.fach===nn.fach&&canEditT(tt))patch('termin',tref,{done:true})}
       if(ok&&ui.role==='user')pushAdmin('Neue Note eingetragen',(D.meta.name||'Anwender')+' hat eingetragen: '+noteText(nn)+' am '+fmtDate(nn.datum));
     });
     ui.flash=(nn.wert<=2.5?'🎉 ':'👍 ')+(f?f.name:'Fach')+': Note '+gradeLabel(nn.wert)+' gespeichert'+(sj&&sj!==curYear()?'. Sie gehört zum Schuljahr '+sj+' und erscheint dort in der Übersicht.':'.');
@@ -668,7 +705,10 @@ catch (e) { db = getFirestore(app); }
     var el=$('viewUebersicht');
     if(!D.faecher.length){el.innerHTML='<div class="empty"><strong>Noch keine Noten 🌱</strong>Sobald Fächer angelegt und Noten eingetragen sind, erscheint hier die Übersicht.</div>';return}
     var ov='<div class="ov hd"><span>Fach</span><span class="num">Noten</span><span class="num">Schnitt</span><span class="num">Zeugnis</span></div>';
+    var lastG='';
     sortFY(curYear()).forEach(function(f){
+      var gk=gruppeOf(f);
+      if(gk!==lastG){lastG=gk;var gg=GRUPPEN.filter(function(x){return x.k===gk})[0];ov+='<div class="ov gh">'+gg.e+' '+gg.l+'</div>'}
       var s=sums(f.id),n=yearNoten().filter(function(x){return x.fach===f.id}).length;
       ov+='<div class="ov" data-fach="'+f.id+'"><span class="nm"><span aria-hidden="true">'+icon(f.name)+'</span> '+esc(f.name)+'</span><span class="num"><button type="button" class="cntbtn" data-detail="'+f.id+'" aria-label="Details zu '+esc(f.name)+'">'+n+' ›</button></span><span class="num" style="color:'+(s.avg==null?'inherit':gColor(s.avg))+'">'+(s.avg==null?'–':fmt(s.avg))+'</span><span class="num">'+(s.avg==null?'–':Math.min(6,Math.max(1,Math.round(s.avg))))+'</span></div>';
     });
@@ -689,7 +729,7 @@ catch (e) { db = getFirestore(app); }
     var gf='<option value="">Fach wählen</option>'+sortFY(curYear()).map(function(f){return '<option value="'+f.id+'"'+(goal.fach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
     var gz=[1,2,3,4].map(function(z){return '<option value="'+z+'"'+(goal.ziel===z?' selected':'')+'>Zeugnisnote '+z+'</option>'}).join('');
     var gw=GEWICHTE.map(function(w){return '<option value="'+w+'"'+(goal.w===w?' selected':'')+'>Arbeit zählt x'+String(w).replace('.',',')+'</option>'}).join('');
-    el.innerHTML='<div class="stack"><div class="toolrow"><h2>📊 Fächer im Überblick</h2><button class="btn small" type="button" data-act="print-blatt" data-y="'+esc(curYear())+'">📄 PDF / Drucken</button></div><div class="panel">'+ov+'</div></div>'
+    el.innerHTML='<div id="wichtig">'+wichtigHtml()+'</div><div class="stack"><div class="toolrow"><h2>📊 Fächer im Überblick</h2><button class="btn small" type="button" data-act="print-blatt" data-y="'+esc(curYear())+'">📄 PDF / Drucken</button></div><div class="panel">'+ov+'</div></div>'
       +'<div class="stack"><div class="toolrow"><h2>🗓️ Alle Noten nach Datum</h2><select id="listFach" aria-label="Fach filtern">'+fOpts+'</select></div><div class="panel">'+list+'</div></div>'
       +'<div class="stack"><h2>🎯 Wunschnote berechnen</h2><div class="panel pad stack"><div class="fgrid"><label class="fld full">Fach<select data-goal="fach">'+gf+'</select></label>'
       +'<label class="fld">Ziel<select data-goal="ziel">'+gz+'</select></label><label class="fld">Gewicht<select data-goal="w">'+gw+'</select></label></div>'
@@ -774,6 +814,118 @@ catch (e) { db = getFirestore(app); }
     var b=e.target.closest('[data-act="delnote"]');if(b)removeNote(b.dataset.n);
   });
 
+  /* ---------- Termine: Schulaufgaben, Kurzarbeiten, Referate ---------- */
+  var TARTEN=['sa','ex','ref'];
+  var tdraft={id:'',fach:'',art:'sa',datum:'',stoff:''};
+  function dayDiff(iso){var a=new Date((iso||'')+'T00:00:00'),b=new Date(today()+'T00:00:00');return Math.round((a-b)/864e5)}
+  function cdLabel(n){return n===0?'Heute!':n===1?'Morgen':n>1?'in '+n+' Tagen':n===-1?'gestern':'vor '+(-n)+' Tagen'}
+  function cdClass(n){return n<0?'past':n<=1?'hot':n<=4?'warm':'cool'}
+  function canEditT(t){return isAdmin()||(ui.role==='user'&&t.von===ui.me)}
+  function tById(id){return D.termine.filter(function(t){return t.id===id})[0]}
+  function wdLabel(iso){var d=new Date(iso+'T00:00:00');return isNaN(d.getTime())?'':['So','Mo','Di','Mi','Do','Fr','Sa'][d.getDay()]+' '+fmtDate(iso)}
+  function terminTitle(t){var f=fach(t.fach);return '<span aria-hidden="true">'+icon(f?f.name:'')+'</span> '+esc(f?f.name:'(Fach gelöscht)')+' · '+esc(art(t.art).l)}
+  function wichtigHtml(){
+    var ts=D.termine.filter(function(t){return !t.done}).map(function(t){return {t:t,n:dayDiff(t.datum)}});
+    var past=ts.filter(function(x){return x.n<0}).sort(function(a,b){return b.n-a.n});
+    var up=ts.filter(function(x){return x.n>=0}).sort(function(a,b){return a.n-b.n||(a.t.created||0)-(b.t.created||0)});
+    var h='<div class="panel pad stack wichtig"><h2>⭐ Das Wichtigste jetzt</h2>';
+    if(!up.length&&!past.length){
+      return h+'<p class="hint">Keine Prüfung eingetragen. Unter „Termine“ trägst du Schulaufgaben, Kurzarbeiten und Referate ein. Dann siehst du hier den Countdown.</p></div>';
+    }
+    past.slice(0,3).forEach(function(x){
+      h+='<div class="wline wback"><div class="wt">'+terminTitle(x.t)+' war '+esc(cdLabel(x.n))+'. Wie lief es?</div>'
+        +'<div class="toolrow"><button class="btn small primary" type="button" data-act="t-note" data-t="'+x.t.id+'">Note eintragen</button>'+(canEditT(x.t)?'<button class="btn small" type="button" data-act="t-done" data-t="'+x.t.id+'">Erledigt</button>':'')+'</div></div>';
+    });
+    var week=up.filter(function(x){return x.n<=6}).length;
+    if(up.length)h+='<p class="hint">'+(week?'In den nächsten 7 Tagen: '+week+(week===1?' Prüfung':' Prüfungen'):'In den nächsten 7 Tagen ist nichts dran 🎉')+'</p>';
+    up.slice(0,4).forEach(function(x){
+      h+='<div class="wline"><span class="cd '+cdClass(x.n)+'">'+esc(cdLabel(x.n))+'</span><div class="wt"><b>'+terminTitle(x.t)+'</b>'+(x.t.stoff?'<div class="stoff">'+esc(x.t.stoff)+'</div>':'')+'</div></div>';
+    });
+    if(up.length>4)h+='<p class="hint">und '+(up.length-4)+' weitere unter „Termine“</p>';
+    return h+'</div>';
+  }
+  function refreshWichtig(){var el=$('wichtig');if(el)el.innerHTML=wichtigHtml()}
+  function groupedTiles(attr,selId){
+    return GRUPPEN.map(function(g){
+      var fs=sortFY(curYear()).filter(function(f){return gruppeOf(f)===g.k});
+      if(!fs.length)return '';
+      return '<div class="glabel">'+g.e+' '+g.l+'</div><div class="ftiles">'+fs.map(function(f){
+        var on=f.id===selId;
+        return '<button type="button" class="ftile'+(on?' on':'')+'" data-'+attr+'="fach" data-v="'+f.id+'" aria-pressed="'+on+'"><span class="ic" aria-hidden="true">'+icon(f.name)+'</span><span class="nm">'+esc(f.name)+'</span></button>';
+      }).join('')+'</div>';
+    }).join('');
+  }
+  function tcard(t){
+    var n=dayDiff(t.datum),isA=armed['t'+t.id];
+    return '<div class="tcard"><div class="cd '+cdClass(n)+'">'+esc(cdLabel(n))+'</div><div class="tbody"><div class="tt">'+terminTitle(t)+'</div><div class="tm">'+esc(wdLabel(t.datum))+(t.von&&t.von!==ui.me?' · von '+esc(vonLabel(t.von)):'')+'</div>'
+      +(t.stoff?'<div class="stoff">'+esc(t.stoff)+'</div>':'<div class="stoff none">Stoff noch nicht eingetragen</div>')
+      +(canEditT(t)?'<div class="toolrow"><button class="btn small" type="button" data-act="t-edit" data-t="'+t.id+'">Ändern</button><button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="t-del" data-t="'+t.id+'">'+(isA?'Wirklich löschen?':'Löschen')+'</button></div>':'')+'</div></div>';
+  }
+  function renderTermine(){
+    var el=$('viewTermine');
+    if(!D.faecher.length){el.innerHTML='<div class="empty"><strong>Noch keine Fächer 🙈</strong>Sobald Fächer angelegt sind, kannst du hier Termine eintragen.</div>';return}
+    if(!tdraft.datum)tdraft.datum='';
+    var chips=TARTEN.map(function(k){var a=art(k),on=tdraft.art===k;return '<button type="button" class="chip'+(on?' on':'')+'" data-tset="art" data-v="'+k+'" aria-pressed="'+on+'"><span aria-hidden="true">'+a.e+'</span> '+(k==='ex'?'Kurzarbeit / Ex':a.l)+'</button>'}).join('');
+    var h='';
+    if(ui.termErr)h+='<div class="warnbox">Die Termine sind noch nicht freigeschaltet. Dafür müssen einmalig die neuen Regeln in Firebase veröffentlicht werden'+(isAdmin()?'.':' – sag Papa Bescheid.')+'</div>';
+    h+='<form id="tform" class="panel pad stack" novalidate><h2>'+(tdraft.id?'Termin ändern ✏️':'Neuer Termin 📌')+'</h2>'
+      +'<div class="step" id="t-lfach"><div class="lab"><b>1</b> Welches Fach?</div>'+groupedTiles('tset',tdraft.fach)+'</div>'
+      +'<div class="step"><div class="lab"><b>2</b> Was kommt?</div><div class="chips">'+chips+'</div></div>'
+      +'<div class="step" id="t-ldat"><div class="lab"><b>3</b> Wann?</div><label class="fld"><input type="date" id="t-datum" data-td="datum" value="'+esc(tdraft.datum)+'" aria-label="Datum der Prüfung"></label></div>'
+      +'<div class="step"><div class="lab"><b>4</b> Was kommt dran?</div><label class="fld"><textarea id="t-stoff" data-td="stoff" rows="3" maxlength="500" placeholder="z. B. Bruchrechnen, Buch Seite 40 bis 52, Vokabeln Unit 3">'+esc(tdraft.stoff)+'</textarea></label></div>'
+      +'<div class="toolrow"><button class="btn primary submit" type="submit">'+(tdraft.id?'Änderung speichern':'Termin speichern')+' 📌</button>'+(tdraft.id?'<button class="btn" type="button" data-act="t-cancel">Abbrechen</button>':'')+'</div></form>';
+    var up=D.termine.filter(function(t){return !t.done&&dayDiff(t.datum)>=0}).sort(function(a,b){return a.datum<b.datum?-1:a.datum>b.datum?1:(a.created||0)-(b.created||0)});
+    var past=D.termine.filter(function(t){return !t.done&&dayDiff(t.datum)<0}).sort(function(a,b){return a.datum<b.datum?1:-1});
+    h+='<div class="stack"><h2>📅 Kommende Prüfungen</h2>'+(up.length?up.map(tcard).join(''):'<div class="empty">Noch keine Prüfung eingetragen.</div>')+'</div>';
+    if(past.length)h+='<div class="stack"><h2>✅ Vorbei: Note eintragen?</h2>'+past.map(function(t){
+      return '<div class="tcard"><div class="cd past">'+esc(cdLabel(dayDiff(t.datum)))+'</div><div class="tbody"><div class="tt">'+terminTitle(t)+'</div><div class="tm">'+esc(wdLabel(t.datum))+'</div>'
+        +'<div class="toolrow"><button class="btn small primary" type="button" data-act="t-note" data-t="'+t.id+'">Note eintragen</button>'+(canEditT(t)?'<button class="btn small" type="button" data-act="t-done" data-t="'+t.id+'">Erledigt</button>':'')+'</div></div></div>';
+    }).join('')+'</div>';
+    el.innerHTML=h;
+  }
+  $('viewTermine').addEventListener('input',function(e){var k=e.target.dataset.td;if(k)tdraft[k]=e.target.value});
+  $('viewTermine').addEventListener('change',function(e){var k=e.target.dataset.td;if(k){tdraft[k]=e.target.value;$('t-ldat').classList.remove('bad')}});
+  $('viewTermine').addEventListener('submit',function(e){
+    e.preventDefault();if(ui.role==='none')return;
+    var bad=false;
+    $('t-lfach').classList.remove('bad');$('t-ldat').classList.remove('bad');
+    if(!tdraft.fach){$('t-lfach').classList.add('bad');bad=true}
+    if(!tdraft.datum){$('t-ldat').classList.add('bad');bad=true}
+    if(bad){toast('Bitte Fach und Datum auswählen.');return}
+    if(ui.termErr){toast('Termine sind noch nicht freigeschaltet.');return}
+    var stoff=(tdraft.stoff||'').trim().slice(0,500),f=fach(tdraft.fach),neu=!tdraft.id;
+    if(neu){
+      var t={id:newId(),fach:tdraft.fach,art:tdraft.art,datum:tdraft.datum,stoff:stoff,created:Date.now(),von:ui.me,done:false};
+      put('termin',t).then(function(ok){
+        if(ok&&ui.role==='user')pushAdmin('Neuer Termin eingetragen',(D.meta.name||'Anwender')+': '+(f?f.name:'Fach')+' '+art(t.art).l+' am '+fmtDate(t.datum)+(stoff?' – '+stoff.slice(0,120):''));
+      });
+    }else{
+      patch('termin',tdraft.id,{fach:tdraft.fach,art:tdraft.art,datum:tdraft.datum,stoff:stoff,done:false});
+    }
+    toast(neu?'Termin gespeichert 📌':'Änderung gespeichert ✅',3000);
+    tdraft={id:'',fach:'',art:'sa',datum:'',stoff:''};
+    ui.forceNext=true;renderTermine();
+  });
+  $('app').addEventListener('click',function(e){
+    var ts=e.target.closest('[data-tset]');
+    if(ts){
+      var k=ts.dataset.tset,v=ts.dataset.v;
+      if(k==='fach')tdraft.fach=tdraft.fach===v?'':v;else tdraft.art=v;
+      renderTermine();return;
+    }
+    var b=e.target.closest('[data-act^="t-"]');if(!b)return;
+    var a=b.dataset.act,t=tById(b.dataset.t);
+    if(a==='t-cancel'){tdraft={id:'',fach:'',art:'sa',datum:'',stoff:''};renderTermine();return}
+    if(!t)return;
+    if(a==='t-edit'&&canEditT(t)){tdraft={id:t.id,fach:t.fach,art:t.art,datum:t.datum,stoff:t.stoff||''};ui.view='termine';render(true);try{window.scrollTo(0,0)}catch(x){}return}
+    if(a==='t-del'&&canEditT(t)){if(armDelete('t'+t.id)){ui.forceNext=true;del('termin',t.id)}return}
+    if(a==='t-done'&&canEditT(t)){patch('termin',t.id,{done:true});return}
+    if(a==='t-note'){
+      draft={fach:t.fach,art:t.art,wert:'',base:'',mod:'',w:art(t.art).w,datum:t.datum};
+      ui.termRef=t.id;ui.view='eingabe';ui.detail=null;render(true);try{window.scrollTo(0,0)}catch(x){}
+    }
+  });
+
   /* ---------- Zeugnisse und Verlauf ---------- */
   function yearsAll(){
     var m={};
@@ -820,7 +972,10 @@ catch (e) { db = getFirestore(app); }
       h+='<div class="stack ycard"><div class="toolrow"><div style="flex:1 1 auto"><h2>🎓 Schuljahr '+y+'</h2><div class="sub2">'+(kl?'Klasse '+esc(kl):'Klasse noch nicht eingetragen')+(y===curYear()?' · aktuelles Schuljahr':'')+'</div></div>'
         +'<button class="btn small" type="button" data-act="print-blatt" data-y="'+y+'">📄 PDF / Drucken</button></div><div class="panel">'
         +'<div class="zr hd"><span>Fach</span><span class="num">Ø jetzt</span><span class="num">Zwischen</span><span class="num">Jahr</span></div>';
+      var lastZ='';
       sortFY(y).forEach(function(f){
+        var gk=gruppeOf(f);
+        if(gk!==lastZ){lastZ=gk;var gz=GRUPPEN.filter(function(x){return x.k===gk})[0];h+='<div class="zr gh">'+gz.e+' '+gz.l+'</div>'}
         var av=yAvg(y,f.id);
         h+='<div class="zr"><span><span aria-hidden="true">'+icon(f.name)+'</span> '+esc(f.name)+'</span><span class="num" style="color:'+gcol(av)+'">'+(av==null?'–':fmt(av))+'</span><span class="num">'+zsel(y,'zw',f)+'</span><span class="num">'+zsel(y,'jz',f)+'</span></div>';
       });
@@ -901,8 +1056,8 @@ catch (e) { db = getFirestore(app); }
     var cols=[{t:'Fach',w:34},{t:'Einzelnoten',w:92},{t:'Ø',w:16,a:'c'},{t:'Zwischen-\nzeugnis',w:22,a:'c'},{t:'Jahres-\nzeugnis',w:22,a:'c'}];
     var NX=M+cols[0].w,NW=cols[1].w;
     yy=pdfHead(doc,yy,cols);
-    var any=false;
-    sortF().forEach(function(f){
+    var any=false,lastG='';
+    sortFY(y).forEach(function(f){
       var ns=yNoten(y,f.id),av=yAvg(y,f.id),zw=zget(y,'zw',f.id),jz=zget(y,'jz',f.id);
       if(!ns.length&&zw==null&&jz==null)return;
       any=true;
@@ -916,7 +1071,13 @@ catch (e) { db = getFirestore(app); }
       var lines=[[]],x=0;
       chips.forEach(function(c){if(x+c.w>NW-4&&lines[lines.length-1].length){lines.push([]);x=0}lines[lines.length-1].push(c);x+=c.w+2});
       var rh=Math.max(11,lines.length*7.2+3.5);
-      if(yy+rh>PH-18){doc.addPage();yy=pdfHead(doc,M,cols)}
+      var gk=gruppeOf(f),hdr=gk!==lastG;
+      if(yy+rh+(hdr?7:0)>PH-18){doc.addPage();yy=pdfHead(doc,M,cols)}
+      if(hdr){
+        lastG=gk;var gl=GRUPPEN.filter(function(x){return x.k===gk})[0].l;
+        doc.setFillColor(245,242,255);doc.rect(M,yy,CW,7,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor.apply(doc,PC.hd);doc.text(gl.toUpperCase(),M+2.5,yy+4.8);yy+=7;
+      }
       doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor.apply(doc,PC.fg);
       doc.text(doc.splitTextToSize(ansi(f.name),cols[0].w-4)[0],M+2.5,yy+rh/2+1.3);
       lines.forEach(function(ln,li){
@@ -1023,7 +1184,7 @@ catch (e) { db = getFirestore(app); }
       var n=D.noten.filter(function(x){return x.fach===f.id}).length,isA=armed[f.id];
       var on=fachActive(curYear()).some(function(x){return x.id===f.id});
       var locked=yearNoten().some(function(x){return x.fach===f.id});
-      return '<div class="srow" data-id="'+f.id+'"><input class="inp" data-ren="'+f.id+'" value="'+esc(f.name)+'" maxlength="40" aria-label="Name des Fachs"><label class="fa"><input type="checkbox" data-fy="'+f.id+'"'+(on?' checked':'')+(locked?' disabled':'')+'> '+(locked?'hat Noten in '+esc(curYear()):'im Schuljahr '+esc(curYear()))+'</label><span class="cnt">'+n+' Note'+(n===1?'':'n')+'</span>'
+      return '<div class="srow" data-id="'+f.id+'"><input class="inp" data-ren="'+f.id+'" value="'+esc(f.name)+'" maxlength="40" aria-label="Name des Fachs"><select class="grsel" data-gr="'+f.id+'" aria-label="Gruppe von '+esc(f.name)+'">'+GRUPPEN.map(function(g){return '<option value="'+g.k+'"'+(gruppeOf(f)===g.k?' selected':'')+'>'+g.e+' '+g.l+'</option>'}).join('')+'</select><label class="fa"><input type="checkbox" data-fy="'+f.id+'"'+(on?' checked':'')+(locked?' disabled':'')+'> '+(locked?'hat Noten in '+esc(curYear()):'im Schuljahr '+esc(curYear()))+'</label><span class="cnt">'+n+' Note'+(n===1?'':'n')+'</span>'
         +'<button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="delfach" data-f="'+f.id+'">'+(isA?(n?'Mit '+n+' Noten löschen?':'Löschen?'):'Löschen')+'</button></div>';
     }).join('');
     var used=D.faecher.map(function(f){return f.name.toLowerCase()});
@@ -1042,7 +1203,7 @@ catch (e) { db = getFirestore(app); }
       +'<label class="fld">Schuljahr<select id="s-jahr">'+yo+'</select></label>'
       +'<label class="fld">Klasse im Schuljahr '+esc(curYear())+'<input id="s-klasse" value="'+esc(klasseOf(curYear()))+'" maxlength="12" placeholder="z. B. 7a"></label></div>'
       +'<p class="hint">Eine Note gehört zu dem Schuljahr, in dem ihr Datum liegt (ab August beginnt ein neues Schuljahr). Die Klasse trägst du für jedes Schuljahr einzeln ein, sie wird im Verlauf und auf dem Ausdruck angezeigt.</p></div>'
-      +'<div class="stack"><h2>📚 Fächer</h2><p class="hint">Das Häkchen bestimmt, welche Fächer in diesem Schuljahr erscheinen. Alte Noten bleiben erhalten. „Löschen“ entfernt ein Fach mit allen Noten aus allen Schuljahren.</p><div class="panel">'+(rows||'<div class="srow"><span class="hint">Noch kein Fach angelegt.</span></div>')
+      +'<div class="stack"><h2>📚 Fächer</h2><p class="hint">Die Gruppe sortiert die Fächer in Hauptfächer, Lernfächer und Musische Fächer. Das Häkchen bestimmt, welche Fächer in diesem Schuljahr erscheinen. Alte Noten bleiben erhalten. „Löschen“ entfernt ein Fach mit allen Noten aus allen Schuljahren.</p><div class="panel">'+(rows||'<div class="srow"><span class="hint">Noch kein Fach angelegt.</span></div>')
       +'<div class="addrow"><input class="inp" id="s-new" list="subjList" placeholder="Neues Fach, z. B. Mathematik" maxlength="40" aria-label="Neues Fach"><datalist id="subjList">'+VORSCHLAG.map(function(v){return '<option value="'+v+'">'}).join('')+'</datalist>'
       +'<button class="btn primary" type="button" id="s-add">Fach anlegen</button></div>'
       +(sug?'<div class="sugg">'+sug+'</div>':'')+'</div></div>'
@@ -1154,6 +1315,7 @@ catch (e) { db = getFirestore(app); }
   $('viewEinst').addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='s-new'){e.preventDefault();addSubject(e.target.value)}});
   $('viewEinst').addEventListener('change',function(e){
     var t=e.target;if(!isAdmin())return;
+    if(t.dataset.gr){patch('fach',t.dataset.gr,{gruppe:t.value});return}
     if(t.dataset.fy){
       var cur=fachActive(curYear()).map(function(f){return f.id}).filter(function(i){return i!==t.dataset.fy});
       if(t.checked)cur.push(t.dataset.fy);
@@ -1181,7 +1343,7 @@ catch (e) { db = getFirestore(app); }
     var n=D.noten.filter(function(x){return x.id===id})[0];if(!n||!canDel(n))return;
     if(armDelete(id)){ui.forceNext=true;del('note',id)}
   }
-  document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('[data-view]');if(!b)return;ui.view=b.dataset.view;ui.detail=null;say('');render(true);if(ui.view==='uebersicht'||ui.view==='zeugnis')logVisit('ansicht')});
+  document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('[data-view]');if(!b)return;ui.view=b.dataset.view;ui.detail=null;ui.termRef=null;say('');render(true);if(ui.view==='uebersicht'||ui.view==='zeugnis')logVisit('ansicht')});
 
   function render(force){
     if(ui.role==='none')return;
@@ -1189,16 +1351,17 @@ catch (e) { db = getFirestore(app); }
     if(!isAdmin()&&ui.view==='einst')ui.view='eingabe';
     $('tabS').hidden=!isAdmin();
     var v=ui.view;
-    $('tabE').setAttribute('aria-selected',v==='eingabe');$('tabU').setAttribute('aria-selected',v==='uebersicht');$('tabZ').setAttribute('aria-selected',v==='zeugnis');$('tabS').setAttribute('aria-selected',v==='einst');
+    $('tabE').setAttribute('aria-selected',v==='eingabe');$('tabU').setAttribute('aria-selected',v==='uebersicht');$('tabZ').setAttribute('aria-selected',v==='zeugnis');$('tabT').setAttribute('aria-selected',v==='termine');$('tabS').setAttribute('aria-selected',v==='einst');
     if(v!=='uebersicht')ui.detail=null;
-    $('viewEingabe').hidden=v!=='eingabe';$('viewUebersicht').hidden=v!=='uebersicht'||!!ui.detail;$('viewDetail').hidden=!(v==='uebersicht'&&ui.detail);$('viewEinst').hidden=v!=='einst';$('viewZeugnis').hidden=v!=='zeugnis';
+    $('viewEingabe').hidden=v!=='eingabe';$('viewUebersicht').hidden=v!=='uebersicht'||!!ui.detail;$('viewDetail').hidden=!(v==='uebersicht'&&ui.detail);$('viewEinst').hidden=v!=='einst';$('viewZeugnis').hidden=v!=='zeugnis';$('viewTermine').hidden=v!=='termine';
     if(v==='eingabe'){
       if(force||!ui.entryOk||ui.sig!==fachSig()){if(force||!busy('viewEingabe'))renderEntry()}
-      else renderRecent();
+      else{renderRecent();refreshWichtig()}
     }else if(v==='uebersicht'){
       if(ui.detail){if(force||!busy('viewDetail'))renderDetail()}
       else if(force||!busy('viewUebersicht'))renderUeb();
-    }else if(v==='zeugnis'){if(force||!busy('viewZeugnis'))renderZeugnis()}
+    }else if(v==='termine'){if(force||!busy('viewTermine'))renderTermine()}
+    else if(v==='zeugnis'){if(force||!busy('viewZeugnis'))renderZeugnis()}
     else if(v==='einst'){if(force||!busy('viewEinst'))renderEinst()}
   }
 

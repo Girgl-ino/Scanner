@@ -57,5 +57,28 @@ service cloud.firestore {
         && request.resource.data.tag is string
         && request.resource.data.tag.size() == 10;
     }
+
+    // Termine (Schulaufgaben, Kurzarbeiten, Referate): beide tragen ein, jeder ändert nur seine eigenen
+    function gueltigerTermin(d) {
+      return d.keys().hasOnly(['id','fach','art','datum','stoff','created','von','done'])
+        && d.id is string
+        && d.fach is string
+        && d.art in ['sa','ex','ref']
+        && d.datum is string && d.datum.size() == 10
+        && d.stoff is string && d.stoff.size() <= 600
+        && d.created is number
+        && d.von is string
+        && d.done is bool;
+    }
+    match /termine/{id} {
+      allow read: if mitglied();
+      allow create: if admin()
+        || (anwender() && gueltigerTermin(request.resource.data) && request.resource.data.von == request.auth.uid);
+      allow update: if admin()
+        || (anwender() && resource.data.von == request.auth.uid
+            && gueltigerTermin(request.resource.data) && request.resource.data.von == request.auth.uid);
+      allow delete: if admin()
+        || (anwender() && resource.data.von == request.auth.uid);
+    }
   }
 }
