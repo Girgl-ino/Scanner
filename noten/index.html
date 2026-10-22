@@ -282,11 +282,35 @@ catch (e) { db = getFirestore(app); }
     say(c==='permission-denied'?'Das darfst du nicht. Die Änderung wurde zurückgenommen.':'Speichern fehlgeschlagen ('+(c||'Fehler')+'). Bitte erneut versuchen.');
     ui.forceNext=true;render(true);
   }
-  function put(kind,obj){return setDoc(doc(db,COL[kind],obj.id),obj).catch(fail)}
+  function put(kind,obj){return setDoc(doc(db,COL[kind],obj.id),obj).then(function(){return true},function(e){fail(e);return false})}
   function patch(kind,id,fields){return updateDoc(doc(db,COL[kind],id),fields).catch(fail)}
   function del(kind,id){return deleteDoc(doc(db,COL[kind],id)).catch(fail)}
   function putMeta(){return setDoc(doc(db,'meta','settings'),D.meta).catch(fail)}
 
+  /* ---------- Benachrichtigung an den Admin (über ntfy.sh, freiwillig) ---------- */
+  function pushAdmin(title,text){
+    var t=D.meta.ntfyTopic;if(!t)return Promise.resolve(false);
+    return fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:t,title:title,message:text,tags:['memo']})})
+      .then(function(r){return r.ok},function(){return false});
+  }
+  var seenNoten=null;
+  function lastSeenGet(){try{return Number(localStorage.getItem('noten-lastseen'))||0}catch(e){return 0}}
+  function lastSeenSet(){try{localStorage.setItem('noten-lastseen',String(Date.now()))}catch(e){}}
+  function noteText(n){var f=fach(n.fach);return (f?f.name:'Fach')+': '+gradeLabel(n.wert)+' ('+art(n.art).l+')'}
+  function detectNew(arr){
+    if(!isAdmin())return;
+    var ids={};arr.forEach(function(n){ids[n.id]=1});
+    if(seenNoten===null){
+      var ls=lastSeenGet();
+      var neu=arr.filter(function(n){return n.von===USER_UID&&(n.created||0)>ls});
+      if(ls&&neu.length)say('Neu seit deinem letzten Besuch: '+neu.slice(0,3).map(noteText).join(' · ')+(neu.length>3?' · und '+(neu.length-3)+' weitere':''));
+      lastSeenSet();
+    }else{
+      var neu2=arr.filter(function(n){return n.von===USER_UID&&!seenNoten[n.id]});
+      if(neu2.length){say('Neue Note von '+(D.meta.name||'Anwender')+': '+neu2.map(noteText).join(' · '));lastSeenSet()}
+    }
+    seenNoten=ids;
+  }
   function afterSnap(){
     var f=ui.forceNext;ui.forceNext=false;
     render(f);
@@ -303,6 +327,7 @@ catch (e) { db = getFirestore(app); }
         var arr=s.docs.map(function(d){var x=d.data();x.id=d.id;return x});
         var sg=JSON.stringify(arr),changed=sg!==prev[name];prev[name]=sg;
         D[key]=arr;loaded[name]=true;
+        if(name==='noten')detectNew(arr);
         /* Nur neu aufbauen, wenn sich wirklich etwas geändert hat */
         if(changed||ui.forceNext)afterSnap();
       },onErr));
@@ -317,7 +342,7 @@ catch (e) { db = getFirestore(app); }
       render(f);
     },onErr));
   }
-  function stopListeners(){unsubs.forEach(function(u){try{u()}catch(e){}});unsubs=[];loaded={faecher:false,noten:false}}
+  function stopListeners(){seenNoten=null;unsubs.forEach(function(u){try{u()}catch(e){}});unsubs=[];loaded={faecher:false,noten:false}}
 
   /* ---------- Anmeldung ---------- */
   function showLogin(msg){
@@ -450,7 +475,10 @@ catch (e) { db = getFirestore(app); }
     if(bad){say('Bitte Fach, Note und Datum auswählen.');return}
     say('');
     var f=fach(draft.fach),sj=schuljahrOf(draft.datum);
-    put('note',{id:newId(),fach:draft.fach,wert:Number(draft.wert),art:draft.art,gewicht:draft.w,datum:draft.datum,created:Date.now(),von:ui.me});
+    var nn={id:newId(),fach:draft.fach,wert:Number(draft.wert),art:draft.art,gewicht:draft.w,datum:draft.datum,created:Date.now(),von:ui.me};
+    put('note',nn).then(function(ok){
+      if(ok&&ui.role==='user')pushAdmin('Neue Note eingetragen',(D.meta.name||'Anwender')+' hat eingetragen: '+noteText(nn)+' am '+fmtDate(nn.datum));
+    });
     ui.flash=(f?f.name:'Fach')+': Note '+gradeLabel(Number(draft.wert))+' gespeichert'+(sj&&sj!==curYear()?'. Sie gehört zum Schuljahr '+sj+' und erscheint dort in der Übersicht.':'.');
     draft.fach='';draft.wert='';draft.datum=today();
     renderEntry();
@@ -600,6 +628,14 @@ catch (e) { db = getFirestore(app); }
       +'<div class="addrow"><input class="inp" id="s-new" list="subjList" placeholder="Neues Fach, z. B. Mathematik" maxlength="40" aria-label="Neues Fach"><datalist id="subjList">'+VORSCHLAG.map(function(v){return '<option value="'+v+'">'}).join('')+'</datalist>'
       +'<button class="btn primary" type="button" id="s-add">Fach anlegen</button></div>'
       +(sug?'<div class="sugg">'+sug+'</div>':'')+'</div></div>'
+      +'<div class="panel pad stack"><h2>Benachrichtigung aufs Handy</h2>'
+      +(D.meta.ntfyTopic
+        ?'<p class="hint">Aktiv. Sobald '+esc(D.meta.name||'der Anwender')+' eine Note einträgt, bekommst du eine Nachricht mit Fach und Note. Installiere dazu die kostenlose App <b>ntfy</b> und abonniere dort dieses Thema:</p><p><code id="s-topic" style="user-select:all;word-break:break-all">'+esc(D.meta.ntfyTopic)+'</code></p>'
+          +'<p class="hint">Die Nachricht läuft über den Dienst ntfy.sh (Server außerhalb deiner Datenbank). Teile das Thema mit niemandem.</p>'
+          +'<div class="toolrow"><button class="btn" type="button" data-act="push-test">Testnachricht senden</button><button class="btn danger" type="button" data-act="push-off">Ausschalten</button></div>'
+        :'<p class="hint">Aus. Wenn du einschaltest, bekommst du eine Nachricht aufs Handy, sobald '+esc(D.meta.name||'der Anwender')+' eine Note einträgt (Fach, Note, Art). Dafür wird die Nachricht über den Dienst ntfy.sh geschickt.</p>'
+          +'<div class="toolrow"><button class="btn primary" type="button" data-act="push-on">Einschalten</button></div>')
+      +'</div>'
       +'<div class="panel pad stack"><h2>Sicherung</h2><p class="hint">Die Datenbank legt keine automatischen Sicherungen an. Lade die Noten hin und wieder als Datei herunter.</p>'
       +'<div class="toolrow"><button class="btn" type="button" data-act="exp-csv">Noten als Tabelle (CSV)</button><button class="btn" type="button" data-act="exp-json">Vollständige Sicherung (JSON)</button></div></div>';
   }
@@ -627,6 +663,14 @@ catch (e) { db = getFirestore(app); }
     if(!isAdmin())return;
     var sg=e.target.closest('[data-sugg]');if(sg){addSubject(sg.dataset.sugg);return}
     if(e.target.id==='s-add'){addSubject($('s-new').value);return}
+    var pa=e.target.closest('[data-act^="push-"]');
+    if(pa){
+      var act=pa.dataset.act;
+      if(act==='push-on'){var a=new Uint8Array(12);crypto.getRandomValues(a);D.meta.ntfyTopic='noten-'+Array.prototype.map.call(a,function(b){return (b%36).toString(36)}).join('');ui.forceNext=true;putMeta();render(true)}
+      else if(act==='push-off'){delete D.meta.ntfyTopic;ui.forceNext=true;putMeta();render(true)}
+      else if(act==='push-test'){say('Sende Testnachricht …');pushAdmin('Test','Die Benachrichtigung funktioniert.').then(function(ok){say(ok?'Testnachricht gesendet. Sie sollte gleich in der ntfy-App erscheinen.':'Senden fehlgeschlagen. Bist du online?')})}
+      return;
+    }
     var x=e.target.closest('[data-act="exp-csv"]');if(x){exportCsv();return}
     x=e.target.closest('[data-act="exp-json"]');if(x){exportJson();return}
     var d=e.target.closest('[data-act="delfach"]');if(!d)return;
