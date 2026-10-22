@@ -212,6 +212,7 @@ details.more .fld{margin-top:8px}
 .cntbtn{border-width:2px}
 .tl{border-radius:0}
 
+#toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:50;max-width:min(92vw,420px);background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:16px;font-weight:700;font-size:14.5px;box-shadow:0 10px 30px rgb(0 0 0 / .35);text-align:center}
 </style>
 </head>
 <body>
@@ -266,6 +267,7 @@ details.more .fld{margin-top:8px}
   <div id="viewEinst" class="stack" hidden></div>
 
   <div id="msg" role="status" aria-live="polite"></div>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
   <div class="foot"><span id="foot"></span><button class="btn small" type="button" id="logoutBtn">Abmelden</button></div>
 </div>
 
@@ -315,7 +317,10 @@ catch (e) { db = getFirestore(app); }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function fmt(n,d){return n.toFixed(d==null?2:d).replace('.',',')}
   function newId(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+  var VERSION='3d';
+  var toastT=null;
   function say(t){$('msg').textContent=t||''}
+  function toast(t,ms){var el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){el.hidden=true},ms||5000)}
   function today(){try{return new Date().toLocaleDateString('sv-SE')}catch(e){return new Date().toISOString().slice(0,10)}}
   function fmtDate(iso){if(!iso)return '';var p=iso.split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:iso}
   function schuljahrOf(iso){if(!iso||iso.length<7)return '';var y=+iso.slice(0,4),m=+iso.slice(5,7),s=m>=8?y:y-1;return s+'/'+String(s+1).slice(2)}
@@ -486,7 +491,7 @@ catch (e) { db = getFirestore(app); }
     if(klasseOf(curYear()))bits.push('Klasse '+esc(klasseOf(curYear())));
     bits.push('Schuljahr '+esc(curYear()));
     $('sub').innerHTML=bits.join(' · ');
-    $('foot').textContent='Angemeldet als '+(isAdmin()?'Admin':(D.meta.name||'Anwender'))+'.';
+    $('foot').textContent='Angemeldet als '+(isAdmin()?'Admin':(D.meta.name||'Anwender'))+' · Version '+VERSION;
     var avgs=[];D.faecher.forEach(function(f){var s=sums(f.id);if(s.avg!=null)avgs.push({f:f,a:s.avg})});
     var el=$('total');
     if(!avgs.length){
@@ -932,17 +937,27 @@ catch (e) { db = getFirestore(app); }
     var blob=doc.output('blob'),file=null;
     try{file=new File([blob],fname,{type:'application/pdf'})}catch(e){}
     try{
-      if(file&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:fname});say('PDF erstellt. Im Teilen-Menü findest du „Drucken“ und „In Dateien sichern“.');return}
-    }catch(e){if(e&&e.name==='AbortError'){say('');return}}
-    doc.save(fname);say('PDF erstellt und heruntergeladen.');
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:fname});
+        toast('PDF fertig. Im Teilen-Menü gibt es „Drucken“ und „In Dateien sichern“.');return;
+      }
+    }catch(e){
+      if(e&&e.name==='AbortError')return;
+    }
+    /* Ohne Teilen-Menü (z. B. Computer): herunterladen */
+    try{doc.save(fname);toast('PDF erstellt und heruntergeladen.');return}catch(e){}
+    try{window.open(URL.createObjectURL(blob),'_blank');toast('PDF geöffnet.')}catch(e){toast('PDF konnte nicht geöffnet werden.')}
   }
   $('app').addEventListener('click',function(e){
     var b=e.target.closest('[data-act^="print-"]');if(!b)return;
-    var y=b.dataset.y||curYear(),verl=b.dataset.act==='print-verlauf';
-    var doc=verl?pdfVerlauf():pdfBlatt(y);
-    if(!doc){say('Die PDF-Funktion ist noch nicht geladen. Bitte kurz warten oder die Seite neu öffnen.');return}
-    var nm=ansi(vorname()).replace(/[^A-Za-z0-9ÄÖÜäöüß-]/g,'')||'Noten';
-    deliverPdf(doc,verl?('Zeugnis-Verlauf-'+nm+'.pdf'):('Notenblatt-'+nm+'-'+y.replace('/','-')+'.pdf'));
+    toast('PDF wird erstellt …',3000);
+    try{
+      var y=b.dataset.y||curYear(),verl=b.dataset.act==='print-verlauf';
+      var doc=verl?pdfVerlauf():pdfBlatt(y);
+      if(!doc){toast('Die PDF-Funktion ist noch nicht geladen. Bitte die App einmal ganz schließen und neu öffnen.',7000);return}
+      var nm=ansi(vorname()).replace(/[^A-Za-z0-9ÄÖÜäöüß-]/g,'')||'Noten';
+      deliverPdf(doc,verl?('Zeugnis-Verlauf-'+nm+'.pdf'):('Notenblatt-'+nm+'-'+y.replace('/','-')+'.pdf')).catch(function(err){toast('PDF-Fehler: '+((err&&err.message)||err),8000)});
+    }catch(err){toast('PDF-Fehler: '+((err&&err.message)||err),8000)}
   });
 
   /* ---------- Einstellungen (nur Admin) ---------- */
@@ -1067,7 +1082,16 @@ catch (e) { db = getFirestore(app); }
     else if(v==='einst'){if(force||!busy('viewEinst'))renderEinst()}
   }
 
-  if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+  if('serviceWorker' in navigator){
+    var hadCtl=!!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      /* Neue Version ist da: neu laden, aber nicht mitten in einer Eingabe */
+      if(hadCtl&&!draft.fach&&!draft.base&&!busy('app'))location.reload();hadCtl=true;
+    });
+    window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').then(function(r){
+      document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')r.update().catch(function(){})});
+    }).catch(function(){})});
+  }
 })();
 </script>
 </body>
