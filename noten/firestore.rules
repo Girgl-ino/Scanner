@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function admin() { return request.auth != null && request.auth.uid == 'iil71ppQ7bbpZY05GzZkg0iZZnC2'; }
+    function anwender() { return request.auth != null && request.auth.uid == '122P1Omo50fJ8GlcY1rR3CR4gMC2'; }
+    function mitglied() { return admin() || anwender(); }
+
+    function gueltigeNote(d) {
+      return d.keys().hasOnly(['id','fach','wert','art','gewicht','datum','created','von'])
+        && d.id is string
+        && d.fach is string
+        && d.wert is number && d.wert >= 1 && d.wert <= 6
+        && d.art in ['sa','ex','mdl','ref']
+        && d.gewicht is number && d.gewicht >= 0.5 && d.gewicht <= 3
+        && d.datum is string && d.datum.size() == 10
+        && d.created is number
+        && d.von is string;
+    }
+
+    // Fächer und Einstellungen: alle lesen, nur der Admin ändert
+    match /faecher/{id} {
+      allow read: if mitglied();
+      allow write: if admin();
+    }
+    match /meta/{id} {
+      allow read: if mitglied();
+      allow write: if admin();
+    }
+
+    // Noten: Admin darf alles; der Anwender trägt eigene Noten ein
+    // und kann sie nur in den ersten 15 Minuten wieder löschen
+    match /noten/{id} {
+      allow read: if mitglied();
+      allow create: if admin()
+        || (anwender()
+            && gueltigeNote(request.resource.data)
+            && request.resource.data.von == request.auth.uid
+            && exists(/databases/$(database)/documents/faecher/$(request.resource.data.fach)));
+      allow update: if admin();
+      allow delete: if admin()
+        || (anwender()
+            && resource.data.von == request.auth.uid
+            && request.time.toMillis() < resource.data.created + 900000);
+    }
+  }
+}

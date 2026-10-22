@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Notenübersicht</title>
+<meta name="theme-color" content="#2f4bd1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Noten">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Anmeldeseite, danach Kopf mit Name, Schuljahr und Gesamtschnitt; drei Reiter (Eingabe, Übersicht, Einstellungen); Detailansicht pro Fach über der Übersicht. */
+:root{
+  --bg:#f1f3f8; --surface:#ffffff; --fg:#161b2e; --muted:#5d6580; --line:#d9deea;
+  --accent:#2f4bd1; --accent-fg:#ffffff; --hl:#ffe066; --warn:#a1302f; --warn-bg:#fbe7e5; --info-bg:#e6ebfb; --ok:#14804a; --ok-bg:#dff3e8;
+  --g1:#14804a; --g2:#3c8d2f; --g3:#9a6b00; --g4:#c2570c; --g5:#c42b3a; --g6:#8f1d4f;
+  --f-display:'Bricolage Grotesque','Arial Narrow',Arial,sans-serif;
+  --f-body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0f1220; --surface:#181c30; --fg:#e8ebf7; --muted:#9aa2c0; --line:#2b3150;
+  --accent:#8ea2ff; --accent-fg:#0f1220; --hl:#f2c230; --warn:#ff8f8c; --warn-bg:#3a1c1f; --info-bg:#1f2547; --ok:#4fd18a; --ok-bg:#16301f;
+  --g1:#4fd18a; --g2:#8fd16a; --g3:#e6b84a; --g4:#f59a56; --g5:#ff7b87; --g6:#e57ab0; color-scheme:dark}}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-top:max(24px,env(safe-area-inset-top,0px));padding-bottom:max(56px,env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 16px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.danger.armed{background:var(--warn);color:#fff;border-color:var(--warn)}
+.btn:disabled{opacity:.6;cursor:default}
+
+.head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:end}
+@media (max-width:560px){.head{grid-template-columns:minmax(0,1fr)}}
+.head h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,5vw,34px);margin:0;letter-spacing:-.01em}
+.head .sub{color:var(--muted);margin:4px 0 0}
+.total{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 18px;min-width:200px}
+.total .lab{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.total .big{font-family:var(--f-mono);font-size:44px;font-weight:500;line-height:1.1;font-variant-numeric:tabular-nums;
+  display:inline-block;background:linear-gradient(transparent 55%,var(--hl) 55%);color:var(--fg);padding:0 4px;margin-top:2px}
+.total .small{font-size:13px;color:var(--muted);margin-top:4px}
+.dist{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:8px;background:var(--line)}
+.dist i{display:block;height:100%}
+.warnbox{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 12px;font-weight:500;font-size:14px}
+.okbox{background:var(--ok-bg);color:var(--ok);border-radius:8px;padding:10px 12px;font-weight:600;font-size:14px}
+
+.tabs{display:flex;gap:4px;background:var(--line);border-radius:10px;padding:4px;align-self:stretch}
+.tabs button{flex:1 1 0;border:0;background:transparent;padding:9px 8px;border-radius:7px;cursor:pointer;font-weight:600;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.pad{padding:16px}
+h2{font-family:var(--f-display);font-size:20px;font-weight:800;margin:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:520px){.fgrid{grid-template-columns:minmax(0,1fr)}}
+.fgrid .full{grid-column:1/-1}
+label.fld{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.fld select,.fld input,.inp{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 10px;min-width:0;width:100%;font-size:16px;letter-spacing:0;text-transform:none;font-weight:400;color:var(--fg)}
+.fld.bad select,.fld.bad input{border-color:var(--warn)}
+.submit{padding:12px 16px;font-size:16px}
+.hint{color:var(--muted);font-size:13.5px;margin:0}
+
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:10px 14px;align-items:center;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .m{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.gtag{font-family:var(--f-mono);font-weight:500}
+
+.ov{display:grid;grid-template-columns:minmax(0,1fr) 70px 90px 100px;gap:8px;padding:10px 14px;align-items:center;border-top:1px solid var(--line)}
+.ov:first-child{border-top:0}
+.ov.hd{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--bg);border-radius:12px 12px 0 0}
+.ov .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+@media (max-width:460px){.ov{grid-template-columns:minmax(0,1fr) 62px 56px 56px;padding:10px;gap:6px}}
+.lrow{display:grid;grid-template-columns:150px minmax(0,1fr) 110px 150px auto;gap:8px 12px;padding:10px 14px;align-items:center;border-top:1px solid var(--line)}
+.lrow:first-child{border-top:0}
+.lrow input,.lrow select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;width:100%}
+.lrow .f{font-weight:600;overflow-wrap:anywhere}
+.lrow .m{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.lrow .d{font-family:var(--f-mono);font-size:13.5px}
+@media (max-width:700px){.lrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.lrow .f{grid-column:1/-1}}
+.toolrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolrow h2{flex:1 1 auto}
+.toolrow select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.result{background:var(--bg);border-radius:8px;padding:10px 12px;font-size:14px}
+
+.srow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.srow:first-child{border-top:0}
+.srow .cnt{color:var(--muted);font-size:13px;white-space:nowrap}
+.addrow{display:flex;gap:8px;flex-wrap:wrap;padding:14px;border-top:1px solid var(--line)}
+.addrow input{flex:1 1 180px}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 14px}
+
+.cntbtn{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:2px 10px;cursor:pointer;font-family:var(--f-mono);font-weight:500;color:var(--accent);white-space:nowrap}
+.cntbtn:hover{border-color:var(--accent)}
+.ov[data-fach]{cursor:pointer}
+.ov[data-fach]:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.back{align-self:flex-start}
+.dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.dhead h2{font-size:clamp(26px,6vw,34px)}
+.dhead .sub2{color:var(--muted);font-size:14px;margin-top:2px}
+.dbig{text-align:right}
+.dbig .v{font-family:var(--f-mono);font-size:42px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+.dbig .z{font-size:13px;color:var(--muted);margin-top:2px}
+.chart{padding:12px 8px 4px}
+.chart svg{display:block;width:100%;height:auto}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tile .k{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.tile .v{font-family:var(--f-mono);font-size:26px;font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12.5px;color:var(--muted)}
+.tl{display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
+.tl:first-child{border-top:0}
+.dt{text-align:center;line-height:1.15}
+.dt .day{font-family:var(--f-mono);font-size:26px;font-weight:500}
+.dt .mon{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.dt .wd{font-size:11.5px;color:var(--muted)}
+.tl .art{font-weight:700;font-size:16px}
+.tl .meta{color:var(--muted);font-size:13px;overflow-wrap:anywhere;margin-top:2px}
+.tl .btn{margin-top:8px}
+.badge{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-family:var(--f-mono);font-size:23px;font-weight:500;
+  color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);border:1px solid color-mix(in srgb,var(--c) 40%,transparent)}
+.pill{display:inline-block;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:600;background:var(--bg);border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:1px}
+
+.empty{border:1px dashed var(--line);border-radius:12px;padding:24px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--fg);font-family:var(--f-display);font-size:19px;margin-bottom:6px}
+.empty .btn{margin-top:12px}
+.foot{font-size:12.5px;color:var(--muted);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+#msg{min-height:1.3em;font-size:13px;color:var(--warn)}
+
+#login{max-width:420px;margin:8vh auto 0;display:flex;flex-direction:column;gap:16px}
+#login h1{font-family:var(--f-display);font-weight:800;font-size:34px;margin:0}
+#login .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.linkbtn{background:none;border:0;color:var(--accent);cursor:pointer;padding:2px 0;font-size:14px;text-align:left}
+details.help{font-size:14px;color:var(--muted)}
+details.help summary{cursor:pointer;color:var(--accent);font-weight:600}
+details.help p{margin:8px 0 0}
+</style>
+</head>
+<body>
+
+<div id="login" hidden>
+  <div>
+    <h1>Notenübersicht</h1>
+    <p class="hint" id="loginSub">Bitte melde dich an.</p>
+  </div>
+  <form class="card" id="loginForm" novalidate>
+    <label class="fld">E-Mail
+      <input id="l-mail" type="email" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    </label>
+    <label class="fld">Passwort
+      <input id="l-pass" type="password" autocomplete="current-password" required>
+    </label>
+    <div id="loginErr" class="warnbox" hidden></div>
+    <div id="loginOk" class="okbox" hidden></div>
+    <button class="btn primary submit" type="submit" id="loginBtn">Anmelden</button>
+    <button class="linkbtn" type="button" id="resetBtn">Passwort vergessen?</button>
+  </form>
+  <details class="help">
+    <summary>App auf den Startbildschirm legen</summary>
+    <p><strong>iPhone:</strong> Seite in Safari öffnen, unten auf Teilen tippen, dann „Zum Home-Bildschirm“.</p>
+    <p><strong>Android:</strong> Seite in Chrome öffnen, oben im Menü „App installieren“ oder „Zum Startbildschirm hinzufügen“ wählen.</p>
+  </details>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <div class="head">
+    <div>
+      <h1>Notenübersicht</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="total" id="total"></div>
+  </div>
+
+  <div id="warn"></div>
+
+  <div class="tabs" role="tablist" aria-label="Ansicht">
+    <button type="button" role="tab" id="tabE" data-view="eingabe" aria-selected="true">Eingabe</button>
+    <button type="button" role="tab" id="tabU" data-view="uebersicht" aria-selected="false">Übersicht</button>
+    <button type="button" role="tab" id="tabS" data-view="einst" aria-selected="false">Einstellungen</button>
+  </div>
+
+  <div id="viewEingabe" class="stack"></div>
+  <div id="viewUebersicht" class="stack" hidden></div>
+  <div id="viewDetail" class="stack" hidden></div>
+  <div id="viewEinst" class="stack" hidden></div>
+
+  <div id="msg" role="status" aria-live="polite"></div>
+  <div class="foot"><span id="foot"></span><button class="btn small" type="button" id="logoutBtn">Abmelden</button></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail }
+  from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
+  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch }
+  from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBidZw233zstU9GoczAKG0AtzQwPfhrXCo",
+  authDomain: "familien-apps.firebaseapp.com",
+  projectId: "familien-apps",
+  storageBucket: "familien-apps.firebasestorage.app",
+  messagingSenderId: "131248899708",
+  appId: "1:131248899708:web:6d624de7131abafb5eabf9"
+};
+/* Rollen: nur die Oberfläche richtet sich danach. Erzwungen werden die Rechte von den Firestore-Regeln. */
+const ADMIN_UID = 'iil71ppQ7bbpZY05GzZkg0iZZnC2';
+const USER_UID  = '122P1Omo50fJ8GlcY1rR3CR4gMC2';
+const DELETE_WINDOW_MS = 15 * 60 * 1000;
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+let db;
+try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+catch (e) { db = getFirestore(app); }
+
+(function(){
+  var GRADES=[{l:'1',v:1},{l:'1-',v:1.25},{l:'2+',v:1.75},{l:'2',v:2},{l:'2-',v:2.25},{l:'3+',v:2.75},{l:'3',v:3},{l:'3-',v:3.25},
+              {l:'4+',v:3.75},{l:'4',v:4},{l:'4-',v:4.25},{l:'5+',v:4.75},{l:'5',v:5},{l:'5-',v:5.25},{l:'6',v:6}];
+  var ARTEN=[{k:'sa',l:'Schulaufgabe',w:2},{k:'ex',l:'Test / Ex',w:1},{k:'mdl',l:'Mündlich',w:1},{k:'ref',l:'Referat',w:1}];
+  var GEWICHTE=[0.5,1,1.5,2,3];
+  var VORSCHLAG=['Deutsch','Mathematik','Englisch','Französisch','Physik','Chemie','Biologie','Geschichte','Geografie','Sport','Musik','Kunst'];
+  var HASH={eingabe:'eingabe',uebersicht:'uebersicht',einstellungen:'einst',einst:'einst'};
+
+  var D={meta:{name:'',schuljahr:''},faecher:[],noten:[]};
+  var ui={view:'eingabe',detail:null,listFach:'alle',role:'none',me:null,sig:null,entryOk:false,flash:'',forceNext:false};
+  var draft={fach:'',art:'sa',wert:'',w:2,datum:''};
+  var goal={fach:'',ziel:2,w:2};
+  var armed={}, unsubs=[], loaded={faecher:false,noten:false};
+  var $=function(id){return document.getElementById(id)};
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+  function fmt(n,d){return n.toFixed(d==null?2:d).replace('.',',')}
+  function newId(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+  function say(t){$('msg').textContent=t||''}
+  function today(){try{return new Date().toLocaleDateString('sv-SE')}catch(e){return new Date().toISOString().slice(0,10)}}
+  function fmtDate(iso){if(!iso)return '';var p=iso.split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:iso}
+  function schuljahrOf(iso){if(!iso||iso.length<7)return '';var y=+iso.slice(0,4),m=+iso.slice(5,7),s=m>=8?y:y-1;return s+'/'+String(s+1).slice(2)}
+  function curYear(){return D.meta.schuljahr||schuljahrOf(today())}
+  function yearList(){
+    var s=+schuljahrOf(today()).slice(0,4),out=[];
+    for(var y=s-3;y<=s+2;y++)out.push(y+'/'+String(y+1).slice(2));
+    if(out.indexOf(curYear())<0)out.push(curYear());
+    return out.sort();
+  }
+  function gradeLabel(v){var b=GRADES[0],d=9;GRADES.forEach(function(g){var x=Math.abs(g.v-v);if(x<d){d=x;b=g}});return b.l}
+  function gColor(v){var r=Math.min(6,Math.max(1,Math.round(v)));return 'var(--g'+r+')'}
+  function art(k){return ARTEN.filter(function(a){return a.k===k})[0]||ARTEN[1]}
+  function fach(id){return D.faecher.filter(function(f){return f.id===id})[0]}
+  function sortF(){return D.faecher.slice().sort(function(a,b){return a.name.localeCompare(b.name,'de')})}
+  function sortNoten(a){return a.slice().sort(function(x,y){var dx=x.datum||'',dy=y.datum||'';return dx<dy?-1:dx>dy?1:(x.created||0)-(y.created||0)})}
+  function yearNoten(){var y=curYear();return D.noten.filter(function(n){return schuljahrOf(n.datum)===y})}
+  function sums(fid){var S=0,W=0;yearNoten().forEach(function(n){if(n.fach===fid){S+=n.wert*n.gewicht;W+=n.gewicht}});return {S:S,W:W,avg:W?S/W:null}}
+  function isAdmin(){return ui.role==='admin'}
+  function vonLabel(id){if(!id)return '';if(id===ui.me)return 'Du';if(id===ADMIN_UID)return 'Admin';if(id===USER_UID)return D.meta.name||'Anwender';return 'Jemand'}
+  /* Admin darf alles löschen, der Anwender nur eigene Noten in den ersten 15 Minuten (Tippfehler) */
+  function canDel(n){return isAdmin()||(ui.role==='user'&&!!n.von&&n.von===ui.me&&Date.now()-(n.created||0)<DELETE_WINDOW_MS)}
+  function fachSig(){return D.faecher.map(function(f){return f.id+':'+f.name}).join('|')}
+  function busy(id){var a=document.activeElement;return !!(a&&$(id).contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))}
+
+  /* ---------- Firestore ---------- */
+  var COL={fach:'faecher',note:'noten'};
+  function fail(e){
+    var c=e&&e.code||'';
+    say(c==='permission-denied'?'Das darfst du nicht. Die Änderung wurde zurückgenommen.':'Speichern fehlgeschlagen ('+(c||'Fehler')+'). Bitte erneut versuchen.');
+    ui.forceNext=true;render(true);
+  }
+  function put(kind,obj){return setDoc(doc(db,COL[kind],obj.id),obj).catch(fail)}
+  function patch(kind,id,fields){return updateDoc(doc(db,COL[kind],id),fields).catch(fail)}
+  function del(kind,id){return deleteDoc(doc(db,COL[kind],id)).catch(fail)}
+  function putMeta(){return setDoc(doc(db,'meta','settings'),D.meta).catch(fail)}
+
+  function afterSnap(){
+    var f=ui.forceNext;ui.forceNext=false;
+    render(f);
+  }
+  function startListeners(){
+    stopListeners();
+    var onErr=function(e){
+      if(e&&e.code==='permission-denied'){ui.role='none';showNoAccess()}
+      else say('Verbindung zur Datenbank gestört ('+((e&&e.code)||'Fehler')+').');
+    };
+    var prev={faecher:null,noten:null};
+    function listen(name,key){
+      unsubs.push(onSnapshot(collection(db,name),function(s){
+        var arr=s.docs.map(function(d){var x=d.data();x.id=d.id;return x});
+        var sg=JSON.stringify(arr),changed=sg!==prev[name];prev[name]=sg;
+        D[key]=arr;loaded[name]=true;
+        /* Nur neu aufbauen, wenn sich wirklich etwas geändert hat */
+        if(changed||ui.forceNext)afterSnap();
+      },onErr));
+    }
+    listen('faecher','faecher');
+    listen('noten','noten');
+    unsubs.push(onSnapshot(doc(db,'meta','settings'),function(s){
+      D.meta=Object.assign({name:'',schuljahr:''},s.exists()?s.data():{});
+      var f=ui.forceNext;ui.forceNext=false;
+      /* In den Einstellungen nicht neu aufbauen, sonst gehen halb getippte Eingaben verloren */
+      if(ui.view==='einst'&&!f){renderHead();return}
+      render(f);
+    },onErr));
+  }
+  function stopListeners(){unsubs.forEach(function(u){try{u()}catch(e){}});unsubs=[];loaded={faecher:false,noten:false}}
+
+  /* ---------- Anmeldung ---------- */
+  function showLogin(msg){
+    $('app').hidden=true;$('login').hidden=false;
+    $('loginErr').hidden=true;$('loginOk').hidden=true;
+    if(msg){$('loginErr').textContent=msg;$('loginErr').hidden=false}
+  }
+  function showApp(){$('login').hidden=true;$('app').hidden=false}
+  function showNoAccess(){
+    showApp();
+    $('viewEingabe').hidden=false;$('viewUebersicht').hidden=true;$('viewDetail').hidden=true;$('viewEinst').hidden=true;
+    document.querySelector('.tabs').hidden=true;
+    $('viewEingabe').innerHTML='<div class="empty"><strong>Kein Zugriff</strong>Dieses Konto ist für die Notenübersicht nicht freigegeben. Melde dich mit dem richtigen Konto an.</div>';
+  }
+  function authMsg(e){
+    var c=e&&e.code||'';
+    if(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-login-credentials')return 'E-Mail oder Passwort stimmt nicht.';
+    if(c==='auth/invalid-email')return 'Das ist keine gültige E-Mail-Adresse.';
+    if(c==='auth/too-many-requests')return 'Zu viele Versuche. Bitte warte ein paar Minuten und versuche es dann erneut.';
+    if(c==='auth/network-request-failed')return 'Keine Verbindung. Prüfe dein Internet.';
+    if(c==='auth/user-disabled')return 'Dieses Konto ist gesperrt.';
+    return 'Anmeldung fehlgeschlagen ('+(c||'Fehler')+').';
+  }
+  $('loginForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var mail=$('l-mail').value.trim(),pass=$('l-pass').value;
+    $('loginErr').hidden=true;$('loginOk').hidden=true;
+    if(!mail||!pass){$('loginErr').textContent='Bitte E-Mail und Passwort eingeben.';$('loginErr').hidden=false;return}
+    $('loginBtn').disabled=true;$('loginBtn').textContent='Anmelden …';
+    try{await signInWithEmailAndPassword(auth,mail,pass)}
+    catch(err){$('loginErr').textContent=authMsg(err);$('loginErr').hidden=false}
+    $('loginBtn').disabled=false;$('loginBtn').textContent='Anmelden';
+  });
+  $('resetBtn').addEventListener('click',async function(){
+    var mail=$('l-mail').value.trim();
+    $('loginErr').hidden=true;$('loginOk').hidden=true;
+    if(!mail){$('loginErr').textContent='Trage oben deine E-Mail ein, dann schicken wir dir einen Link zum Zurücksetzen.';$('loginErr').hidden=false;return}
+    try{await sendPasswordResetEmail(auth,mail);$('loginOk').textContent='Falls es dazu ein Konto gibt, ist eine E-Mail unterwegs. Schau auch im Spam-Ordner nach.';$('loginOk').hidden=false}
+    catch(err){$('loginErr').textContent=authMsg(err);$('loginErr').hidden=false}
+  });
+  $('logoutBtn').addEventListener('click',function(){signOut(auth).catch(function(){})});
+
+  onAuthStateChanged(auth,function(user){
+    if(!user){
+      stopListeners();ui.role='none';ui.me=null;D={meta:{name:'',schuljahr:''},faecher:[],noten:[]};
+      $('l-pass').value='';showLogin();return;
+    }
+    ui.me=user.uid;
+    ui.role=user.uid===ADMIN_UID?'admin':user.uid===USER_UID?'user':'none';
+    if(ui.role==='none'){stopListeners();showNoAccess();return}
+    document.querySelector('.tabs').hidden=false;
+    var h=(location.hash||'').replace('#','');
+    ui.view=HASH[h]||'eingabe';
+    if(!isAdmin()&&ui.view==='einst')ui.view='eingabe';
+    ui.detail=null;draft={fach:'',art:'sa',wert:'',w:2,datum:''};
+    showApp();startListeners();render(true);
+  });
+
+  /* ---------- Kopf ---------- */
+  function renderHead(){
+    var bits=[];if(D.meta.name)bits.push(esc(D.meta.name));bits.push('Schuljahr '+esc(curYear()));
+    $('sub').innerHTML=bits.join(' · ');
+    $('foot').textContent='Angemeldet als '+(isAdmin()?'Admin':(D.meta.name||'Anwender'))+'.';
+    var avgs=[];D.faecher.forEach(function(f){var s=sums(f.id);if(s.avg!=null)avgs.push({f:f,a:s.avg})});
+    var el=$('total');
+    if(!avgs.length){
+      el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">–</div><div class="small">Erscheint, sobald Noten eingetragen sind.</div>';
+      $('warn').innerHTML='';return;
+    }
+    var m=avgs.reduce(function(a,b){return a+b.a},0)/avgs.length;
+    var cnt=[0,0,0,0,0,0,0];
+    avgs.forEach(function(x){cnt[Math.min(6,Math.max(1,Math.round(x.a)))]++});
+    var seg='';for(var g=1;g<=6;g++)if(cnt[g])seg+='<i style="width:'+(cnt[g]/avgs.length*100)+'%;background:var(--g'+g+')"></i>';
+    el.innerHTML='<div class="lab">Gesamtschnitt</div><div class="big">'+fmt(m)+'</div>'
+      +'<div class="small">aus '+avgs.length+(avgs.length>1?' Fächern':' Fach')+'</div><div class="dist" aria-hidden="true">'+seg+'</div>';
+    var bad=avgs.filter(function(x){return x.a>=4.5}).map(function(x){return esc(x.f.name)+' ('+fmt(x.a)+')'});
+    $('warn').innerHTML=bad.length?'<div class="warnbox">Im roten Bereich (Schnitt ab 4,5): '+bad.join(', ')+'</div>':'';
+  }
+
+  /* ---------- Eingabe ---------- */
+  function renderEntry(){
+    var v=$('viewEingabe');
+    if(!draft.datum)draft.datum=today();
+    ui.sig=fachSig();ui.entryOk=true;
+    if(!D.faecher.length){
+      v.innerHTML='<div class="empty"><strong>Noch keine Fächer angelegt</strong>'+(isAdmin()?'Lege zuerst in den Einstellungen die Fächer an. Danach kannst du hier Noten eintragen.<br><button class="btn primary" type="button" data-go="einst">Zu den Einstellungen</button>':'Die Fächer legt der Admin an. Sobald sie da sind, kannst du hier Noten eintragen.')+'</div><div id="recent"></div>';
+      renderRecent();return;
+    }
+    var fo='<option value="">Fach wählen</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(f.id===draft.fach?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
+    var ao=ARTEN.map(function(a){return '<option value="'+a.k+'"'+(a.k===draft.art?' selected':'')+'>'+a.l+'</option>'}).join('');
+    var wo='<option value="">Note wählen</option>'+GRADES.map(function(g){return '<option value="'+g.v+'"'+(String(g.v)===draft.wert?' selected':'')+'>Note '+g.l+'</option>'}).join('');
+    var go=GEWICHTE.map(function(w){return '<option value="'+w+'"'+(w===draft.w?' selected':'')+'>Zählt x'+String(w).replace('.',',')+'</option>'}).join('');
+    v.innerHTML='<form id="entry" class="panel pad stack" novalidate><h2>Neue Note eintragen</h2>'
+      +'<div class="fgrid">'
+      +'<label class="fld full" id="l-fach">Fach<select id="e-fach" data-d="fach">'+fo+'</select></label>'
+      +'<label class="fld">Art der Note<select id="e-art" data-d="art">'+ao+'</select></label>'
+      +'<label class="fld" id="l-wert">Note<select id="e-wert" data-d="wert">'+wo+'</select></label>'
+      +'<label class="fld">Datum<input type="date" id="e-datum" data-d="datum" value="'+esc(draft.datum)+'"></label>'
+      +'<label class="fld">Gewicht<select id="e-w" data-d="w">'+go+'</select></label>'
+      +'</div>'
+      +(ui.flash?'<div class="okbox">'+esc(ui.flash)+'</div>':'')
+      +'<button class="btn primary submit" type="submit">Note speichern</button></form>'
+      +'<div id="recent"></div>';
+    renderRecent();
+  }
+  function renderRecent(){
+    var el=$('recent');if(!el)return;
+    var rows=D.noten.slice().sort(function(a,b){return (b.created||0)-(a.created||0)}).slice(0,6);
+    if(!rows.length){el.innerHTML='';return}
+    el.innerHTML='<div class="stack"><h2>Zuletzt eingetragen</h2><div class="panel">'+rows.map(function(n){
+      var f=fach(n.fach),a=art(n.art),isA=armed[n.id];
+      return '<div class="row"><div><div class="t">'+esc(f?f.name:'(Fach gelöscht)')+' · <span class="gtag" style="color:'+gColor(n.wert)+'">Note '+gradeLabel(n.wert)+'</span></div>'
+        +'<div class="m">'+esc(a.l)+', x'+String(n.gewicht).replace('.',',')+', '+fmtDate(n.datum)+(n.von?', von '+esc(vonLabel(n.von)):'')+'</div></div>'
+        +(canDel(n)?'<button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="delnote" data-n="'+n.id+'">'+(isA?'Löschen?':'Löschen')+'</button>':'<span></span>')+'</div>';
+    }).join('')+'</div></div>';
+  }
+  $('viewEingabe').addEventListener('change',function(e){
+    var k=e.target.dataset.d;if(!k)return;
+    if(k==='w')draft.w=Number(e.target.value);else draft[k]=e.target.value;
+    if(k==='art'){draft.w=art(draft.art).w;var w=$('e-w');if(w)w.value=String(draft.w)}
+    if(e.target.parentNode)e.target.parentNode.classList.remove('bad');
+    ui.flash='';
+  });
+  $('viewEingabe').addEventListener('submit',function(e){
+    e.preventDefault();if(ui.role==='none')return;
+    var bad=false;
+    if(!draft.fach){$('l-fach').classList.add('bad');bad=true}
+    if(draft.wert===''){$('l-wert').classList.add('bad');bad=true}
+    if(!draft.datum){bad=true}
+    if(bad){say('Bitte Fach, Note und Datum auswählen.');return}
+    say('');
+    var f=fach(draft.fach),sj=schuljahrOf(draft.datum);
+    put('note',{id:newId(),fach:draft.fach,wert:Number(draft.wert),art:draft.art,gewicht:draft.w,datum:draft.datum,created:Date.now(),von:ui.me});
+    ui.flash=(f?f.name:'Fach')+': Note '+gradeLabel(Number(draft.wert))+' gespeichert'+(sj&&sj!==curYear()?'. Sie gehört zum Schuljahr '+sj+' und erscheint dort in der Übersicht.':'.');
+    draft.fach='';draft.wert='';draft.datum=today();
+    renderEntry();
+  });
+  $('viewEingabe').addEventListener('click',function(e){
+    var g=e.target.closest('[data-go]');if(g){ui.view=HASH[g.dataset.go]||'eingabe';render(true);return}
+    var b=e.target.closest('[data-act="delnote"]');if(b)removeNote(b.dataset.n);
+  });
+
+  /* ---------- Übersicht ---------- */
+  function goalResult(){
+    if(!goal.fach)return 'Wähle ein Fach, dann siehst du, welche Note du in der nächsten Arbeit brauchst.';
+    var s=sums(goal.fach);
+    if(!s.W)return 'In diesem Fach gibt es im Schuljahr '+esc(curYear())+' noch keine Note.';
+    var x=((goal.ziel+0.49)*(s.W+goal.w)-s.S)/goal.w;
+    var ws=String(goal.w).replace('.',',');
+    if(x>=6)return 'Die Zeugnisnote '+goal.ziel+' ist mit diesem Stand schon sicher, selbst mit einer 6 in der nächsten Arbeit.';
+    if(x<1)return 'Mit Gewicht x'+ws+' reicht auch eine 1 in der nächsten Arbeit nicht mehr für die Note '+goal.ziel+'. Mehrere gute Noten sind nötig.';
+    return 'Für die Zeugnisnote '+goal.ziel+' braucht die nächste Arbeit (Gewicht x'+ws+') mindestens eine <strong>'+gradeLabel(Math.floor(x*4)/4)+'</strong> (rechnerisch '+fmt(x)+' oder besser).';
+  }
+  function renderUeb(){
+    var el=$('viewUebersicht');
+    if(!D.faecher.length){el.innerHTML='<div class="empty"><strong>Noch keine Noten</strong>Sobald Fächer angelegt und Noten eingetragen sind, erscheint hier die Übersicht.</div>';return}
+    var ov='<div class="ov hd"><span>Fach</span><span class="num">Noten</span><span class="num">Schnitt</span><span class="num">Zeugnis</span></div>';
+    sortF().forEach(function(f){
+      var s=sums(f.id),n=yearNoten().filter(function(x){return x.fach===f.id}).length;
+      ov+='<div class="ov" data-fach="'+f.id+'"><span>'+esc(f.name)+'</span><span class="num"><button type="button" class="cntbtn" data-detail="'+f.id+'" aria-label="Details zu '+esc(f.name)+'">'+n+' ›</button></span><span class="num" style="color:'+(s.avg==null?'inherit':gColor(s.avg))+'">'+(s.avg==null?'–':fmt(s.avg))+'</span><span class="num">'+(s.avg==null?'–':Math.min(6,Math.max(1,Math.round(s.avg))))+'</span></div>';
+    });
+    var fOpts='<option value="alle">Alle Fächer</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(ui.listFach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
+    var rows=sortNoten(yearNoten().filter(function(n){return ui.listFach==='alle'||n.fach===ui.listFach})).reverse();
+    var ro=!isAdmin();
+    var list=rows.length?rows.map(function(n){
+      var f=fach(n.fach),a=art(n.art),isA=armed[n.id];
+      var gOpts=GRADES.map(function(g){return '<option value="'+g.v+'"'+(g.v===n.wert?' selected':'')+'>Note '+g.l+'</option>'}).join('');
+      return '<div class="lrow" data-n="'+n.id+'">'
+        +(ro?'<span class="d">'+fmtDate(n.datum)+'</span>':'<input type="date" data-edit="datum" aria-label="Datum" value="'+esc(n.datum||'')+'">')
+        +'<span class="f">'+esc(f?f.name:'(Fach gelöscht)')+'</span>'
+        +(ro?'<span style="color:'+gColor(n.wert)+';font-weight:700">Note '+gradeLabel(n.wert)+'</span>':'<select data-edit="wert" aria-label="Note" style="color:'+gColor(n.wert)+';font-weight:700">'+gOpts+'</select>')
+        +'<span class="m">'+esc(a.l)+', x'+String(n.gewicht).replace('.',',')+(n.von?'<br>von '+esc(vonLabel(n.von)):'')+'</span>'
+        +(canDel(n)?'<button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="delnote" data-n="'+n.id+'">'+(isA?'Löschen?':'Löschen')+'</button>':'<span></span>')
+        +'</div>';
+    }).join(''):'<div class="lrow"><span class="m">Keine Noten in dieser Auswahl.</span></div>';
+    var gf='<option value="">Fach wählen</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(goal.fach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
+    var gz=[1,2,3,4].map(function(z){return '<option value="'+z+'"'+(goal.ziel===z?' selected':'')+'>Zeugnisnote '+z+'</option>'}).join('');
+    var gw=GEWICHTE.map(function(w){return '<option value="'+w+'"'+(goal.w===w?' selected':'')+'>Arbeit zählt x'+String(w).replace('.',',')+'</option>'}).join('');
+    el.innerHTML='<div class="stack"><h2>Fächer im Überblick</h2><div class="panel">'+ov+'</div></div>'
+      +'<div class="stack"><div class="toolrow"><h2>Alle Noten nach Datum</h2><select id="listFach" aria-label="Fach filtern">'+fOpts+'</select></div><div class="panel">'+list+'</div></div>'
+      +'<div class="stack"><h2>Wunschnote berechnen</h2><div class="panel pad stack"><div class="fgrid"><label class="fld full">Fach<select data-goal="fach">'+gf+'</select></label>'
+      +'<label class="fld">Ziel<select data-goal="ziel">'+gz+'</select></label><label class="fld">Gewicht<select data-goal="w">'+gw+'</select></label></div>'
+      +'<div class="result">'+goalResult()+'</div></div></div>';
+  }
+  $('viewUebersicht').addEventListener('click',function(e){
+    var b=e.target.closest('[data-act="delnote"]');if(b){removeNote(b.dataset.n);return}
+    var r=e.target.closest('[data-fach]');
+    if(r){ui.detail=r.dataset.fach;render(true);try{window.scrollTo(0,0)}catch(x){}}
+  });
+  $('viewUebersicht').addEventListener('change',function(e){
+    var t=e.target;
+    if(t.id==='listFach'){ui.listFach=t.value;render(true);return}
+    if(t.dataset.goal){var k=t.dataset.goal;goal[k]=k==='fach'?t.value:Number(t.value);render(true);return}
+    var f=t.dataset.edit;if(!f||!isAdmin())return;
+    var id=t.closest('.lrow').dataset.n;
+    if(f==='datum'){if(t.value)patch('note',id,{datum:t.value})}
+    if(f==='wert')patch('note',id,{wert:Number(t.value)});
+  });
+
+  /* ---------- Detailansicht eines Fachs ---------- */
+  function dateParts(iso){
+    var d=new Date((iso||'')+'T00:00:00');
+    if(isNaN(d.getTime()))return {day:'',mon:'',wd:''};
+    var mon=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],wd=['So','Mo','Di','Mi','Do','Fr','Sa'];
+    return {day:String(d.getDate()),mon:mon[d.getMonth()]+' '+String(d.getFullYear()).slice(2),wd:wd[d.getDay()]};
+  }
+  function shortD(iso){var p=(iso||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.':''}
+  function chartSvg(ns,avg){
+    var W=640,H=250,L=34,R=18,T=18,B=38,iw=W-L-R,ih=H-T-B,n=ns.length;
+    function Y(v){return T+(Math.min(6,Math.max(1,v))-1)/5*ih}
+    function X(i){return n===1?L+iw/2:L+i*iw/(n-1)}
+    var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Notenverlauf im Fach">';
+    for(var g=1;g<=6;g++){var y=Y(g);
+      s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" style="stroke:var(--line)" stroke-width="1"/>'
+        +'<text x="'+(L-10)+'" y="'+(y+4)+'" text-anchor="end" font-size="12" style="fill:var(--muted)" font-family="monospace">'+g+'</text>';}
+    if(avg!=null){var ya=Y(avg);
+      s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+ya+'" y2="'+ya+'" style="stroke:var(--accent)" stroke-width="1.5" stroke-dasharray="5 4"/>'
+        +'<text x="'+(W-R)+'" y="'+(ya-6)+'" text-anchor="end" font-size="12" font-weight="600" style="fill:var(--accent)">Ø '+fmt(avg)+'</text>';}
+    if(n>1){var pts=ns.map(function(x,i){return X(i)+','+Y(x.wert)}).join(' ');
+      s+='<polyline points="'+pts+'" fill="none" style="stroke:var(--muted)" stroke-width="2" stroke-linejoin="round" opacity=".55"/>';}
+    var step=Math.ceil(n/8);
+    ns.forEach(function(x,i){
+      var cx=X(i),cy=Y(x.wert);
+      s+='<circle cx="'+cx+'" cy="'+cy+'" r="14" style="fill:'+gColor(x.wert)+';stroke:var(--surface)" stroke-width="2"/>'
+        +'<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="12" font-weight="700" style="fill:var(--accent-fg)" font-family="monospace">'+gradeLabel(x.wert)+'</text>';
+      if(i%step===0||i===n-1)s+='<text x="'+cx+'" y="'+(H-14)+'" text-anchor="middle" font-size="11.5" style="fill:var(--muted)">'+shortD(x.datum)+'</text>';
+    });
+    return s+'</svg>';
+  }
+  function renderDetail(){
+    var el=$('viewDetail'),f=fach(ui.detail);
+    if(!f){ui.detail=null;render(true);return}
+    var s=sums(f.id),ns=sortNoten(yearNoten().filter(function(n){return n.fach===f.id}));
+    var h='<button class="btn small back" type="button" data-back>‹ Zur Übersicht</button>'
+      +'<div class="dhead"><div><h2>'+esc(f.name)+'</h2><div class="sub2">Schuljahr '+esc(curYear())+' · '+ns.length+(ns.length===1?' Note':' Noten')+'</div></div>'
+      +(s.avg==null?'':'<div class="dbig"><div class="v" style="color:'+gColor(s.avg)+'">'+fmt(s.avg)+'</div><div class="z">Zeugnisnote ca. '+Math.min(6,Math.max(1,Math.round(s.avg)))+'</div></div>')+'</div>';
+    if(!ns.length){el.innerHTML=h+'<div class="empty"><strong>Noch keine Note</strong>In diesem Fach gibt es im Schuljahr '+esc(curYear())+' noch keine Note.</div>';return}
+    h+='<div class="panel chart">'+chartSvg(ns,s.avg)+'</div>';
+    var tiles='';
+    ARTEN.forEach(function(a){
+      var xs=ns.filter(function(n){return n.art===a.k});if(!xs.length)return;
+      var S=0,W=0;xs.forEach(function(n){S+=n.wert*n.gewicht;W+=n.gewicht});var av=S/W;
+      tiles+='<div class="tile"><div class="k">'+a.l+'</div><div class="v" style="color:'+gColor(av)+'">Ø '+fmt(av)+'</div><div class="s">'+xs.length+(xs.length===1?' Note':' Noten')+'</div></div>';
+    });
+    var best=ns.reduce(function(a,b){return b.wert<a.wert?b:a}),worst=ns.reduce(function(a,b){return b.wert>a.wert?b:a});
+    tiles+='<div class="tile"><div class="k">Beste Note</div><div class="v" style="color:'+gColor(best.wert)+'">'+gradeLabel(best.wert)+'</div><div class="s">'+esc(art(best.art).l)+', '+fmtDate(best.datum)+'</div></div>'
+      +'<div class="tile"><div class="k">Schwächste Note</div><div class="v" style="color:'+gColor(worst.wert)+'">'+gradeLabel(worst.wert)+'</div><div class="s">'+esc(art(worst.art).l)+', '+fmtDate(worst.datum)+'</div></div>';
+    h+='<div class="tiles">'+tiles+'</div>';
+    h+='<div class="stack"><h2>Alle Noten</h2><div class="panel">'+ns.slice().reverse().map(function(n){
+      var p=dateParts(n.datum),a=art(n.art),isA=armed[n.id];
+      return '<div class="tl"><div class="dt"><div class="wd">'+p.wd+'</div><div class="day">'+p.day+'</div><div class="mon">'+p.mon+'</div></div>'
+        +'<div><div class="art">'+esc(a.l)+'<span class="pill">zählt x'+String(n.gewicht).replace('.',',')+'</span></div>'
+        +'<div class="meta">'+fmtDate(n.datum)+(n.von?' · eingetragen von '+esc(vonLabel(n.von)):'')+'</div>'
+        +(!canDel(n)?'':'<button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="delnote" data-n="'+n.id+'">'+(isA?'Wirklich löschen?':'Löschen')+'</button>')+'</div>'
+        +'<div class="badge" style="--c:'+gColor(n.wert)+'" title="Note '+gradeLabel(n.wert)+'">'+gradeLabel(n.wert)+'</div></div>';
+    }).join('')+'</div></div>';
+    el.innerHTML=h;
+  }
+  $('viewDetail').addEventListener('click',function(e){
+    if(e.target.closest('[data-back]')){ui.detail=null;render(true);try{window.scrollTo(0,0)}catch(x){}return}
+    var b=e.target.closest('[data-act="delnote"]');if(b)removeNote(b.dataset.n);
+  });
+
+  /* ---------- Einstellungen (nur Admin) ---------- */
+  function renderEinst(){
+    var el=$('viewEinst');
+    var yo=yearList().map(function(y){return '<option value="'+y+'"'+(y===curYear()?' selected':'')+'>Schuljahr '+y+'</option>'}).join('');
+    var rows=sortF().map(function(f){
+      var n=D.noten.filter(function(x){return x.fach===f.id}).length,isA=armed[f.id];
+      return '<div class="srow" data-id="'+f.id+'"><input class="inp" data-ren="'+f.id+'" value="'+esc(f.name)+'" maxlength="40" aria-label="Name des Fachs"><span class="cnt">'+n+' Note'+(n===1?'':'n')+'</span>'
+        +'<button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="delfach" data-f="'+f.id+'">'+(isA?(n?'Mit '+n+' Noten löschen?':'Löschen?'):'Löschen')+'</button></div>';
+    }).join('');
+    var used=D.faecher.map(function(f){return f.name.toLowerCase()});
+    var sug=VORSCHLAG.filter(function(v){return used.indexOf(v.toLowerCase())<0}).map(function(v){return '<button class="btn small" type="button" data-sugg="'+v+'">'+v+'</button>'}).join('');
+    el.innerHTML='<div class="panel pad stack"><h2>Schüler und Schuljahr</h2><div class="fgrid">'
+      +'<label class="fld">Name<input id="s-name" value="'+esc(D.meta.name||'')+'" maxlength="60" placeholder="Name des Schülers"></label>'
+      +'<label class="fld">Schuljahr<select id="s-jahr">'+yo+'</select></label></div>'
+      +'<p class="hint">Eine Note gehört zu dem Schuljahr, in dem ihr Datum liegt (ab August beginnt ein neues Schuljahr). Hier wählst du, welches Schuljahr angezeigt wird.</p></div>'
+      +'<div class="stack"><h2>Fächer</h2><div class="panel">'+(rows||'<div class="srow"><span class="hint">Noch kein Fach angelegt.</span></div>')
+      +'<div class="addrow"><input class="inp" id="s-new" list="subjList" placeholder="Neues Fach, z. B. Mathematik" maxlength="40" aria-label="Neues Fach"><datalist id="subjList">'+VORSCHLAG.map(function(v){return '<option value="'+v+'">'}).join('')+'</datalist>'
+      +'<button class="btn primary" type="button" id="s-add">Fach anlegen</button></div>'
+      +(sug?'<div class="sugg">'+sug+'</div>':'')+'</div></div>'
+      +'<div class="panel pad stack"><h2>Sicherung</h2><p class="hint">Die Datenbank legt keine automatischen Sicherungen an. Lade die Noten hin und wieder als Datei herunter.</p>'
+      +'<div class="toolrow"><button class="btn" type="button" data-act="exp-csv">Noten als Tabelle (CSV)</button><button class="btn" type="button" data-act="exp-json">Vollständige Sicherung (JSON)</button></div></div>';
+  }
+  function addSubject(name){
+    name=(name||'').trim();if(!name||!isAdmin())return;
+    if(D.faecher.some(function(f){return f.name.toLowerCase()===name.toLowerCase()})){say('Dieses Fach gibt es schon.');return}
+    say('');ui.forceNext=true;put('fach',{id:newId(),name:name,created:Date.now(),von:ui.me});
+  }
+  function download(name,text,type){
+    var blob=new Blob([text],{type:type}),a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1500);
+  }
+  function csvCell(v){v=String(v==null?'':v);return /[";\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+  function exportCsv(){
+    var lines=[['Datum','Schuljahr','Fach','Art','Note','Gewicht','Eingetragen von'].join(';')];
+    sortNoten(D.noten).forEach(function(n){var f=fach(n.fach);
+      lines.push([fmtDate(n.datum),schuljahrOf(n.datum),f?f.name:'',art(n.art).l,String(n.wert).replace('.',','),String(n.gewicht).replace('.',','),vonLabel(n.von)].map(csvCell).join(';'))});
+    download('noten-'+today()+'.csv','﻿'+lines.join('\r\n'),'text/csv;charset=utf-8');
+  }
+  function exportJson(){
+    download('noten-sicherung-'+today()+'.json',JSON.stringify({exportiert:new Date().toISOString(),meta:D.meta,faecher:D.faecher,noten:D.noten},null,2),'application/json');
+  }
+  $('viewEinst').addEventListener('click',async function(e){
+    if(!isAdmin())return;
+    var sg=e.target.closest('[data-sugg]');if(sg){addSubject(sg.dataset.sugg);return}
+    if(e.target.id==='s-add'){addSubject($('s-new').value);return}
+    var x=e.target.closest('[data-act="exp-csv"]');if(x){exportCsv();return}
+    x=e.target.closest('[data-act="exp-json"]');if(x){exportJson();return}
+    var d=e.target.closest('[data-act="delfach"]');if(!d)return;
+    var id=d.dataset.f;if(!armDelete(id))return;
+    var ids=D.noten.filter(function(n){return n.fach===id}).map(function(n){return n.id});
+    ui.forceNext=true;
+    try{
+      for(var i=0;i<ids.length;i+=400){
+        var b=writeBatch(db);ids.slice(i,i+400).forEach(function(nid){b.delete(doc(db,'noten',nid))});await b.commit();
+      }
+      await deleteDoc(doc(db,'faecher',id));
+    }catch(err){fail(err)}
+  });
+  $('viewEinst').addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='s-new'){e.preventDefault();addSubject(e.target.value)}});
+  $('viewEinst').addEventListener('change',function(e){
+    var t=e.target;if(!isAdmin())return;
+    if(t.id==='s-name'){D.meta.name=t.value.trim();putMeta();renderHead();return}
+    if(t.id==='s-jahr'){D.meta.schuljahr=t.value;ui.forceNext=true;putMeta();render(true);return}
+    if(t.dataset.ren){
+      var nm=t.value.trim(),f=fach(t.dataset.ren);
+      if(!nm||!f){t.value=f?f.name:'';return}
+      if(D.faecher.some(function(x){return x.id!==f.id&&x.name.toLowerCase()===nm.toLowerCase()})){say('Dieses Fach gibt es schon.');t.value=f.name;return}
+      say('');patch('fach',f.id,{name:nm});
+    }
+  });
+
+  /* ---------- Gemeinsames ---------- */
+  function armDelete(key){
+    if(!armed[key]){armed[key]=true;render(true);setTimeout(function(){if(armed[key]){delete armed[key];render(true)}},3500);return false}
+    delete armed[key];return true;
+  }
+  function removeNote(id){
+    var n=D.noten.filter(function(x){return x.id===id})[0];if(!n||!canDel(n))return;
+    if(armDelete(id)){ui.forceNext=true;del('note',id)}
+  }
+  document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('[data-view]');if(!b)return;ui.view=b.dataset.view;ui.detail=null;say('');render(true)});
+
+  function render(force){
+    if(ui.role==='none')return;
+    renderHead();
+    if(!isAdmin()&&ui.view==='einst')ui.view='eingabe';
+    $('tabS').hidden=!isAdmin();
+    var v=ui.view;
+    $('tabE').setAttribute('aria-selected',v==='eingabe');$('tabU').setAttribute('aria-selected',v==='uebersicht');$('tabS').setAttribute('aria-selected',v==='einst');
+    if(v!=='uebersicht')ui.detail=null;
+    $('viewEingabe').hidden=v!=='eingabe';$('viewUebersicht').hidden=v!=='uebersicht'||!!ui.detail;$('viewDetail').hidden=!(v==='uebersicht'&&ui.detail);$('viewEinst').hidden=v!=='einst';
+    if(v==='eingabe'){
+      if(force||!ui.entryOk||ui.sig!==fachSig()){if(force||!busy('viewEingabe'))renderEntry()}
+      else renderRecent();
+    }else if(v==='uebersicht'){
+      if(ui.detail){if(force||!busy('viewDetail'))renderDetail()}
+      else if(force||!busy('viewUebersicht'))renderUeb();
+    }else if(v==='einst'){if(force||!busy('viewEinst'))renderEinst()}
+  }
+
+  if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+})();
+</script>
+</body>
+</html>
