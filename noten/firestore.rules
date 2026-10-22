@@ -43,5 +43,19 @@ service cloud.firestore {
             && resource.data.von == request.auth.uid
             && request.time.toMillis() < resource.data.created + 900000);
     }
+
+    // Besuchsprotokoll: nur der Anwender schreibt einen Eintrag, nur der Admin liest und löscht
+    match /besuche/{id} {
+      allow read, delete: if admin();
+      allow create: if anwender()
+        && request.resource.data.keys().hasOnly(['von','t','art','tag'])
+        && request.resource.data.von == request.auth.uid
+        && request.resource.data.t is number
+        && request.resource.data.t > request.time.toMillis() - 600000
+        && request.resource.data.t < request.time.toMillis() + 600000
+        && request.resource.data.art in ['oeffnen','ansicht']
+        && request.resource.data.tag is string
+        && request.resource.data.tag.size() == 10;
+    }
   }
 }

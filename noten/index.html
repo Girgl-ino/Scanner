@@ -285,7 +285,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebas
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
 import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
-  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch }
+  collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, writeBatch, query, orderBy, limit }
   from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -325,7 +325,7 @@ catch (e) { db = getFirestore(app); }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function fmt(n,d){return n.toFixed(d==null?2:d).replace('.',',')}
   function newId(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-  var VERSION='4a';
+  var VERSION='5';
   var toastT=null;
   function say(t){$('msg').textContent=t||''}
   function toast(t,ms){var el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){el.hidden=true},ms||5000)}
@@ -386,6 +386,21 @@ catch (e) { db = getFirestore(app); }
   function del(kind,id){return deleteDoc(doc(db,COL[kind],id)).catch(fail)}
   function putMeta(){return setDoc(doc(db,'meta','settings'),D.meta).catch(fail)}
 
+  /* ---------- Besuchsprotokoll (nur Anwender schreibt, nur Admin liest) ---------- */
+  /* Nur den Besuchsbericht austauschen, damit nichts Getipptes in den Einstellungen verloren geht */
+  function refreshBesuche(){var el=$('besuche');if(el&&ui.view==='einst')el.outerHTML=besuchPanel()}
+  var lastLog={};
+  function logVisit(artK){
+    if(ui.role!=='user')return;
+    var key='noten-lv-'+artK,last=lastLog[artK]||0;
+    try{last=Math.max(last,Number(localStorage.getItem(key))||0)}catch(e){}
+    var now=Date.now();
+    if(now-last<10*60*1000)return;
+    lastLog[artK]=now;
+    try{localStorage.setItem(key,String(now))}catch(e){}
+    try{setDoc(doc(db,'besuche',newId()),{von:ui.me,t:now,art:artK,tag:today()}).catch(function(){})}catch(e){}
+  }
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')logVisit('oeffnen')});
   /* ---------- Benachrichtigung an den Admin (über ntfy.sh, freiwillig) ---------- */
   function pushAdmin(title,text){
     var t=D.meta.ntfyTopic;if(!t)return Promise.resolve(false);
@@ -433,6 +448,15 @@ catch (e) { db = getFirestore(app); }
     }
     listen('faecher','faecher');
     listen('noten','noten');
+    if(isAdmin()){
+      /* Besuchsprotokoll: nur der Admin darf es lesen. Fehler hier dürfen die App nie sperren. */
+      unsubs.push(onSnapshot(query(collection(db,'besuche'),orderBy('t','desc'),limit(300)),function(s){
+        D.besuche=s.docs.map(function(d){var x=d.data();x.id=d.id;return x}).sort(function(a,b){return b.t-a.t});
+        ui.besuchErr=false;refreshBesuche();
+      },function(){
+        D.besuche=[];ui.besuchErr=true;refreshBesuche();
+      }));
+    }
     unsubs.push(onSnapshot(doc(db,'meta','settings'),function(s){
       D.meta=Object.assign({name:'',schuljahr:''},s.exists()?s.data():{});
       var f=ui.forceNext;ui.forceNext=false;
@@ -486,7 +510,7 @@ catch (e) { db = getFirestore(app); }
 
   onAuthStateChanged(auth,function(user){
     if(!user){
-      stopListeners();ui.role='none';ui.me=null;D={meta:{name:'',schuljahr:''},faecher:[],noten:[]};
+      stopListeners();ui.role='none';ui.me=null;D={meta:{name:'',schuljahr:''},faecher:[],noten:[],besuche:[]};ui.besuchErr=false;
       $('l-pass').value='';showLogin();return;
     }
     ui.me=user.uid;
@@ -498,6 +522,7 @@ catch (e) { db = getFirestore(app); }
     if(!isAdmin()&&ui.view==='einst')ui.view='eingabe';
     ui.detail=null;draft={fach:'',art:'sa',wert:'',base:'',mod:'',w:2,datum:''};
     showApp();startListeners();render(true);
+    logVisit('oeffnen');if(ui.view==='uebersicht'||ui.view==='zeugnis')logVisit('ansicht');
   });
 
   /* ---------- Kopf ---------- */
@@ -1029,8 +1054,34 @@ catch (e) { db = getFirestore(app); }
         :'<p class="hint">Aus. Wenn du einschaltest, bekommst du eine Nachricht aufs Handy, sobald '+esc(D.meta.name||'der Anwender')+' eine Note einträgt (Fach, Note, Art). Dafür wird die Nachricht über den Dienst ntfy.sh geschickt.</p>'
           +'<div class="toolrow"><button class="btn primary" type="button" data-act="push-on">Einschalten</button></div>')
       +'</div>'
+      +besuchPanel()
       +'<div class="panel pad stack"><h2>💾 Sicherung</h2><p class="hint">Die Datenbank legt keine automatischen Sicherungen an. Lade die Noten hin und wieder als Datei herunter.</p>'
       +'<div class="toolrow"><button class="btn" type="button" data-act="exp-csv">Noten als Tabelle (CSV)</button><button class="btn" type="button" data-act="exp-json">Vollständige Sicherung (JSON)</button></div></div>';
+  }
+  function ago(t){
+    var m=Math.round((Date.now()-t)/60000);
+    if(m<1)return 'gerade eben';if(m<60)return 'vor '+m+' Min.';
+    var h=Math.round(m/60);if(h<24)return 'vor '+h+' Std.';
+    var d=Math.round(h/24);return d===1?'gestern':'vor '+d+' Tagen';
+  }
+  function dtLabel(t){
+    var d=new Date(t),wd=['So','Mo','Di','Mi','Do','Fr','Sa'][d.getDay()];
+    return wd+' '+String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'., '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' Uhr';
+  }
+  function besuchPanel(){
+    var vn=esc(vorname()||'Anwender'),h='<div class="panel pad stack" id="besuche"><h2>👀 Besuche von '+vn+'</h2>';
+    if(ui.besuchErr){
+      return h+'<p class="hint">Das Protokoll ist noch nicht freigeschaltet. Dafür müssen einmalig die neuen Regeln in Firebase veröffentlicht werden. Danach erscheinen hier die Besuche.</p></div>';
+    }
+    var b=D.besuche||[],now=Date.now(),c=function(art,days){return b.filter(function(x){return x.art===art&&x.t>now-days*864e5}).length};
+    if(!b.length)return h+'<p class="hint">Noch kein Besuch aufgezeichnet. Sobald '+vn+' die App öffnet oder seine Noten ansieht, erscheint es hier.</p></div>';
+    h+='<div class="tiles"><div class="tile"><div class="k">Zuletzt in der App</div><div class="v" style="font-size:20px">'+esc(ago(b[0].t))+'</div><div class="s">'+esc(dtLabel(b[0].t))+'</div></div>'
+      +'<div class="tile"><div class="k">Letzte 7 Tage</div><div class="v">'+c('oeffnen',7)+'×</div><div class="s">geöffnet · '+c('ansicht',7)+'× Noten angesehen</div></div>'
+      +'<div class="tile"><div class="k">Letzte 30 Tage</div><div class="v">'+c('oeffnen',30)+'×</div><div class="s">geöffnet · '+c('ansicht',30)+'× Noten angesehen</div></div></div>';
+    h+='<div class="panel">'+b.slice(0,10).map(function(x){return '<div class="row"><div class="t">'+(x.art==='ansicht'?'👀 Noten angesehen':'📱 App geöffnet')+'</div><div class="m">'+esc(dtLabel(x.t))+'</div></div>'}).join('')+'</div>';
+    h+='<p class="hint">Gezählt wird, wenn '+vn+' die App öffnet und wenn er Übersicht oder Zeugnisse ansieht, höchstens einmal alle 10 Minuten.</p>'
+      +'<div class="toolrow"><button class="btn small danger'+(armed.clrb?' armed':'')+'" type="button" data-act="clr-besuche">'+(armed.clrb?'Wirklich alles löschen?':'Protokoll leeren')+'</button></div></div>';
+    return h;
   }
   function addSubject(name){
     name=(name||'').trim();if(!name||!isAdmin())return;
@@ -1070,6 +1121,12 @@ catch (e) { db = getFirestore(app); }
       var k=($('w-klasse')||{}).value;
       if(k&&k.trim()){D.meta.klassen=Object.assign({},D.meta.klassen||{});D.meta.klassen[curYear()]=k.trim()}
       setYearList(ids);return;
+    }
+    if(e.target.closest('[data-act="clr-besuche"]')){
+      if(!armDelete('clrb'))return;
+      var bid=(D.besuche||[]).map(function(x){return x.id});
+      try{for(var q=0;q<bid.length;q+=400){var bb=writeBatch(db);bid.slice(q,q+400).forEach(function(i){bb.delete(doc(db,'besuche',i))});await bb.commit()}}catch(err){fail(err)}
+      return;
     }
     var sg=e.target.closest('[data-sugg]');if(sg){addSubject(sg.dataset.sugg);return}
     if(e.target.id==='s-add'){addSubject($('s-new').value);return}
@@ -1124,7 +1181,7 @@ catch (e) { db = getFirestore(app); }
     var n=D.noten.filter(function(x){return x.id===id})[0];if(!n||!canDel(n))return;
     if(armDelete(id)){ui.forceNext=true;del('note',id)}
   }
-  document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('[data-view]');if(!b)return;ui.view=b.dataset.view;ui.detail=null;say('');render(true)});
+  document.querySelector('.tabs').addEventListener('click',function(e){var b=e.target.closest('[data-view]');if(!b)return;ui.view=b.dataset.view;ui.detail=null;say('');render(true);if(ui.view==='uebersicht'||ui.view==='zeugnis')logVisit('ansicht')});
 
   function render(force){
     if(ui.role==='none')return;
