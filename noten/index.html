@@ -212,41 +212,6 @@ details.more .fld{margin-top:8px}
 .cntbtn{border-width:2px}
 .tl{border-radius:0}
 
-/* ===== Ausdruck (A4) ===== */
-#printArea{display:none}
-@media print{
-  @page{size:A4;margin:12mm}
-  :root{--bg:#fff;--surface:#fff;--fg:#1c1840;--muted:#5d5a7d;--line:#d8d4ee;--accent:#6a4df4;--accent-fg:#fff;
-    --g1:#14804a;--g2:#3c8d2f;--g3:#9a6b00;--g4:#c2570c;--g5:#c42b3a;--g6:#8f1d4f;color-scheme:light}
-  html,body{background:#fff!important;color:var(--fg);padding:0!important;font-size:11pt}
-  body>*:not(#printArea){display:none!important}
-  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  #printArea{display:block;font-family:var(--f-body)}
-  #printArea h1{font-family:var(--f-display);font-size:26pt;margin:2mm 0 0;line-height:1.1}
-  #printArea h2{font-family:var(--f-display);font-size:15pt;margin:0 0 2mm}
-  .pr-head{display:flex;justify-content:space-between;align-items:center;gap:8mm;padding:6mm 7mm;border-radius:6mm;color:#fff;background:linear-gradient(135deg,#6a4df4,#e0509a)}
-  .pr-head h1{color:#fff}
-  .pr-kicker{font-weight:700;opacity:.9;font-size:10pt}
-  .pr-total{background:#fff;color:var(--fg);border-radius:5mm;padding:3mm 6mm;text-align:center;font-size:9pt;font-weight:700}
-  .pr-total b{display:block;font-family:var(--f-display);font-size:24pt;line-height:1.1}
-  .pr-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:5mm 0}
-  .pr-meta div{border:.4mm solid var(--line);border-radius:3mm;padding:2mm 3mm;font-weight:700;font-size:11pt}
-  .pr-meta span{display:block;font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-  .pr-t{width:100%;border-collapse:separate;border-spacing:0;font-size:10pt}
-  .pr-t th{background:#ece8ff;color:#3b2fa0;text-align:left;padding:2.2mm 2.5mm;font-size:8.5pt;vertical-align:bottom}
-  .pr-t th:first-child{border-radius:3mm 0 0 0}.pr-t th:last-child{border-radius:0 3mm 0 0}
-  .pr-t td{padding:2.4mm 2.5mm;border-bottom:.3mm solid var(--line);vertical-align:middle}
-  .pr-t tr{break-inside:avoid}
-  .pr-t .pf{font-weight:800;white-space:nowrap}
-  .pr-t .pn{text-align:center;font-family:var(--f-display);font-weight:800;font-size:12pt;white-space:nowrap}
-  .pr-t .pe{text-align:center;color:var(--muted);padding:8mm}
-  .pr-t .ps td{background:#f5f2ff;font-weight:800}
-  .pc{display:inline-flex;align-items:baseline;gap:1.2mm;margin:0 1.5mm 1.5mm 0;padding:.6mm 2.2mm;border-radius:99px;border:.3mm solid var(--c);color:var(--c);white-space:nowrap}
-  .pc b{font-family:var(--f-display);font-size:11pt}
-  .pc i{font-style:normal;font-size:8pt;color:var(--muted)}
-  .pr-year{margin-top:6mm;break-inside:avoid}
-  .pr-foot{margin-top:6mm;font-size:8pt;color:var(--muted);text-align:center}
-}
 </style>
 </head>
 <body>
@@ -304,8 +269,7 @@ details.more .fld{margin-top:8px}
   <div class="foot"><span id="foot"></span><button class="btn small" type="button" id="logoutBtn">Abmelden</button></div>
 </div>
 
-<div id="printArea" aria-hidden="true"></div>
-
+<script src="jspdf.umd.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail }
@@ -665,7 +629,7 @@ catch (e) { db = getFirestore(app); }
     var gf='<option value="">Fach wählen</option>'+sortF().map(function(f){return '<option value="'+f.id+'"'+(goal.fach===f.id?' selected':'')+'>'+esc(f.name)+'</option>'}).join('');
     var gz=[1,2,3,4].map(function(z){return '<option value="'+z+'"'+(goal.ziel===z?' selected':'')+'>Zeugnisnote '+z+'</option>'}).join('');
     var gw=GEWICHTE.map(function(w){return '<option value="'+w+'"'+(goal.w===w?' selected':'')+'>Arbeit zählt x'+String(w).replace('.',',')+'</option>'}).join('');
-    el.innerHTML='<div class="stack"><div class="toolrow"><h2>📊 Fächer im Überblick</h2><button class="btn small" type="button" data-act="print-blatt" data-y="'+esc(curYear())+'">🖨️ Drucken</button></div><div class="panel">'+ov+'</div></div>'
+    el.innerHTML='<div class="stack"><div class="toolrow"><h2>📊 Fächer im Überblick</h2><button class="btn small" type="button" data-act="print-blatt" data-y="'+esc(curYear())+'">📄 PDF / Drucken</button></div><div class="panel">'+ov+'</div></div>'
       +'<div class="stack"><div class="toolrow"><h2>🗓️ Alle Noten nach Datum</h2><select id="listFach" aria-label="Fach filtern">'+fOpts+'</select></div><div class="panel">'+list+'</div></div>'
       +'<div class="stack"><h2>🎯 Wunschnote berechnen</h2><div class="panel pad stack"><div class="fgrid"><label class="fld full">Fach<select data-goal="fach">'+gf+'</select></label>'
       +'<label class="fld">Ziel<select data-goal="ziel">'+gz+'</select></label><label class="fld">Gewicht<select data-goal="w">'+gw+'</select></label></div>'
@@ -786,20 +750,15 @@ catch (e) { db = getFirestore(app); }
       +'<option value="">–</option>'+[1,2,3,4,5,6].map(function(g){return '<option value="'+g+'"'+(cur===g?' selected':'')+'>'+g+'</option>'}).join('')+'</select>';
   }
   function renderZeugnis(){
-    var el=$('viewZeugnis'),all=yearsAll(),pts=[];
-    all.forEach(function(y){
-      var a=zavg(y,'zw'),b=zavg(y,'jz'),sh=y.slice(2,4)+'/'+y.slice(5);
-      if(a!=null)pts.push({l:sh+' Zw',v:a});
-      if(b!=null)pts.push({l:sh+' Jz',v:b});
-    });
-    var h='<div class="toolrow"><h2>🏆 Zeugnisse und Verlauf</h2><button class="btn small" type="button" data-act="print-verlauf">🖨️ Gesamtverlauf drucken</button></div>';
+    var el=$('viewZeugnis'),all=yearsAll(),pts=zPts();
+    var h='<div class="toolrow"><h2>🏆 Zeugnisse und Verlauf</h2><button class="btn small" type="button" data-act="print-verlauf">📄 Gesamtverlauf als PDF</button></div>';
     h+=pts.length?'<div class="panel chart">'+verlaufSvg(pts)+'</div><p class="hint">Zw = Zwischenzeugnis, Jz = Jahreszeugnis. Die Zahlen sind die Durchschnitte der eingetragenen Zeugnisnoten.</p>'
       :'<div class="empty"><strong>Noch keine Zeugnisnoten 📄</strong>'+(isAdmin()?'Trage unten beim Schuljahr die Noten aus dem Zwischen- und Jahreszeugnis ein. Dann entsteht hier der Verlauf über die Jahre.':'Hier erscheinen später die Noten aus Zwischen- und Jahreszeugnis.')+'</div>';
     if(!D.faecher.length)return void(el.innerHTML=h);
     all.slice().reverse().forEach(function(y){
       var kl=klasseOf(y),a=zavg(y,'zw'),b=zavg(y,'jz'),t=yTotal(y);
       h+='<div class="stack ycard"><div class="toolrow"><div style="flex:1 1 auto"><h2>🎓 Schuljahr '+y+'</h2><div class="sub2">'+(kl?'Klasse '+esc(kl):'Klasse noch nicht eingetragen')+(y===curYear()?' · aktuelles Schuljahr':'')+'</div></div>'
-        +'<button class="btn small" type="button" data-act="print-blatt" data-y="'+y+'">🖨️ Drucken</button></div><div class="panel">'
+        +'<button class="btn small" type="button" data-act="print-blatt" data-y="'+y+'">📄 PDF / Drucken</button></div><div class="panel">'
         +'<div class="zr hd"><span>Fach</span><span class="num">Ø jetzt</span><span class="num">Zwischen</span><span class="num">Jahr</span></div>';
       sortF().forEach(function(f){
         var av=yAvg(y,f.id);
@@ -820,50 +779,170 @@ catch (e) { db = getFirestore(app); }
     ui.forceNext=true;putMeta();render(true);
   });
 
-  /* ---------- Drucken (A4) ---------- */
-  function pHead(titel,y){
-    var kl=klasseOf(y),t=yTotal(y);
-    return '<div class="pr-head"><div><div class="pr-kicker">📚 Notenübersicht</div><h1>'+titel+'</h1></div>'
-      +(t==null?'':'<div class="pr-total"><div>Gesamtschnitt</div><b>'+fmt(t)+'</b></div>')+'</div>'
-      +'<div class="pr-meta"><div><span>Name</span>'+esc(D.meta.name||'–')+'</div><div><span>Schule</span>'+esc(D.meta.schule||'–')+'</div><div><span>Klasse</span>'+esc(kl||'–')+'</div><div><span>Schuljahr</span>'+esc(y)+'</div></div>';
+  /* ---------- PDF (A4) zum Teilen, Speichern oder Drucken ---------- */
+  var PC={acc:[106,77,244],lav:[236,232,255],line:[216,212,238],fg:[28,24,64],mut:[93,90,125],hd:[59,47,160]};
+  var M=12,PW=210,PH=297,CW=186;
+  function ansi(s){return String(s==null?'':s).replace(/[^\u0000-ÿ–—‘’“”…€]/g,'').trim()}
+  function gRGB(v){var r=Math.min(6,Math.max(1,Math.round(v)));return [[20,128,74],[60,141,47],[154,107,0],[194,87,12],[196,43,58],[143,29,79]][r-1]}
+  function newPdf(){var J=window.jspdf&&window.jspdf.jsPDF;return J?new J({unit:'mm',format:'a4',orientation:'portrait'}):null}
+  function zPts(){
+    var pts=[];
+    yearsAll().forEach(function(y){
+      var a=zavg(y,'zw'),b=zavg(y,'jz'),sh=y.slice(2,4)+'/'+y.slice(5);
+      if(a!=null)pts.push({l:sh+' Zw',v:a});
+      if(b!=null)pts.push({l:sh+' Jz',v:b});
+    });
+    return pts;
   }
-  function pFoot(){return '<div class="pr-foot">Ausgedruckt am '+fmtDate(today())+' · Notenübersicht · Ø = gewichteter Durchschnitt (Schulaufgabe zählt doppelt)</div>'}
-  function printBlatt(y){
-    var rows='';
+  function pdfBand(doc,title,kicker,total){
+    doc.setFillColor.apply(doc,PC.acc);doc.roundedRect(M,M,CW,28,5,5,'F');
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');
+    doc.setFontSize(9);doc.text(ansi(kicker),M+7,M+9);
+    doc.setFontSize(20);doc.text(ansi(title),M+7,M+20);
+    if(total!=null){
+      doc.setFillColor(255,255,255);doc.roundedRect(M+CW-44,M+4,38,20,4,4,'F');
+      doc.setTextColor.apply(doc,PC.mut);doc.setFontSize(6.5);doc.text('GESAMTSCHNITT',M+CW-25,M+9.5,{align:'center'});
+      doc.setTextColor.apply(doc,PC.fg);doc.setFontSize(18);doc.text(fmt(total),M+CW-25,M+19.5,{align:'center'});
+    }
+  }
+  function pdfMeta(doc,y,items){
+    var gap=3,w=(CW-gap*(items.length-1))/items.length;
+    items.forEach(function(it,i){
+      var x=M+i*(w+gap);
+      doc.setDrawColor.apply(doc,PC.line);doc.setLineWidth(.4);doc.roundedRect(x,y,w,13,2.5,2.5,'S');
+      doc.setFont('helvetica','bold');doc.setFontSize(6.5);doc.setTextColor.apply(doc,PC.mut);doc.text(it[0].toUpperCase(),x+3,y+4.6);
+      doc.setFontSize(10);doc.setTextColor.apply(doc,PC.fg);doc.text(doc.splitTextToSize(ansi(it[1])||'–',w-5)[0],x+3,y+10);
+    });
+    return y+13;
+  }
+  function pdfHead(doc,y,cols){
+    doc.setFillColor.apply(doc,PC.lav);doc.rect(M,y,CW,10,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor.apply(doc,PC.hd);
+    var x=M;cols.forEach(function(c){
+      var lines=String(c.t).split('\n'),tx=c.a==='c'?x+c.w/2:x+2.5;
+      lines.forEach(function(ln,i){doc.text(ln,tx,y+(lines.length>1?4+i*3.4:6.2),c.a==='c'?{align:'center'}:undefined)});
+      x+=c.w;
+    });
+    return y+10;
+  }
+  function pdfFooters(doc,legend){
+    var n=doc.getNumberOfPages();
+    for(var i=1;i<=n;i++){
+      doc.setPage(i);doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor.apply(doc,PC.mut);
+      if(legend)doc.text(legend,M,PH-12.5);
+      doc.text('Ausgedruckt am '+fmtDate(today())+' · Notenübersicht',M,PH-8);
+      doc.text('Seite '+i+' von '+n,PW-M,PH-8,{align:'right'});
+    }
+  }
+  function pdfBlatt(y){
+    var doc=newPdf();if(!doc)return null;
+    pdfBand(doc,'Notenblatt Schuljahr '+y,'Notenübersicht',yTotal(y));
+    var yy=pdfMeta(doc,M+34,[['Name',D.meta.name],['Schule',D.meta.schule],['Klasse',klasseOf(y)],['Schuljahr',y]])+8;
+    var cols=[{t:'Fach',w:34},{t:'Einzelnoten',w:92},{t:'Ø',w:16,a:'c'},{t:'Zwischen-\nzeugnis',w:22,a:'c'},{t:'Jahres-\nzeugnis',w:22,a:'c'}];
+    var NX=M+cols[0].w,NW=cols[1].w;
+    yy=pdfHead(doc,yy,cols);
+    var any=false;
     sortF().forEach(function(f){
       var ns=yNoten(y,f.id),av=yAvg(y,f.id),zw=zget(y,'zw',f.id),jz=zget(y,'jz',f.id);
       if(!ns.length&&zw==null&&jz==null)return;
-      rows+='<tr><td class="pf"><span>'+icon(f.name)+'</span> '+esc(f.name)+'</td><td>'
-        +ns.map(function(n){return '<span class="pc" style="--c:'+gColor(n.wert)+'"><b>'+gradeLabel(n.wert)+'</b><i>'+art(n.art).s+' '+shortD(n.datum)+'</i></span>'}).join('')
-        +'</td><td class="pn" style="color:'+gcol(av)+'">'+(av==null?'–':fmt(av))+'</td><td class="pn">'+(zw==null?'':zw)+'</td><td class="pn">'+(jz==null?'':jz)+'</td></tr>';
+      any=true;
+      /* Noten-Chips umbrechen */
+      var chips=ns.map(function(n){
+        var g=gradeLabel(n.wert),r=art(n.art).s+' '+shortD(n.datum);
+        doc.setFont('helvetica','bold');doc.setFontSize(9.5);var w1=doc.getTextWidth(g);
+        doc.setFont('helvetica','normal');doc.setFontSize(7);var w2=doc.getTextWidth(r);
+        return {g:g,r:r,w1:w1,w:w1+w2+6,c:gRGB(n.wert)};
+      });
+      var lines=[[]],x=0;
+      chips.forEach(function(c){if(x+c.w>NW-4&&lines[lines.length-1].length){lines.push([]);x=0}lines[lines.length-1].push(c);x+=c.w+2});
+      var rh=Math.max(11,lines.length*7.2+3.5);
+      if(yy+rh>PH-18){doc.addPage();yy=pdfHead(doc,M,cols)}
+      doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor.apply(doc,PC.fg);
+      doc.text(doc.splitTextToSize(ansi(f.name),cols[0].w-4)[0],M+2.5,yy+rh/2+1.3);
+      lines.forEach(function(ln,li){
+        var cx=NX+2,cy=yy+2.2+li*7.2;
+        ln.forEach(function(c){
+          doc.setDrawColor.apply(doc,c.c);doc.setLineWidth(.35);doc.roundedRect(cx,cy,c.w,5.6,2.8,2.8,'S');
+          doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor.apply(doc,c.c);doc.text(c.g,cx+2,cy+4.2);
+          doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor.apply(doc,PC.mut);doc.text(c.r,cx+2+c.w1+1.6,cy+4.1);
+          cx+=c.w+2;
+        });
+      });
+      var cxs=M+cols[0].w+cols[1].w;
+      doc.setFont('helvetica','bold');doc.setFontSize(11.5);
+      if(av!=null){doc.setTextColor.apply(doc,gRGB(av));doc.text(fmt(av),cxs+8,yy+rh/2+1.6,{align:'center'})}
+      doc.setTextColor.apply(doc,PC.fg);
+      if(zw!=null)doc.text(String(zw),cxs+16+11,yy+rh/2+1.6,{align:'center'});
+      if(jz!=null)doc.text(String(jz),cxs+16+22+11,yy+rh/2+1.6,{align:'center'});
+      doc.setDrawColor.apply(doc,PC.line);doc.setLineWidth(.3);doc.line(M,yy+rh,M+CW,yy+rh);
+      yy+=rh;
     });
-    if(!rows)rows='<tr><td colspan="5" class="pe">In diesem Schuljahr gibt es noch keine Noten.</td></tr>';
-    return pHead('Notenblatt Schuljahr '+y,y)+'<table class="pr-t"><thead><tr><th>Fach</th><th>Einzelnoten (SA = Schulaufgabe, Ex = Test, mdl = mündlich, Ref = Referat)</th><th>Ø</th><th>Zwischen-zeugnis</th><th>Jahres-zeugnis</th></tr></thead><tbody>'+rows+'</tbody></table>'+pFoot();
+    if(!any){doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor.apply(doc,PC.mut);doc.text('In diesem Schuljahr gibt es noch keine Noten.',M+CW/2,yy+12,{align:'center'})}
+    pdfFooters(doc,'Ø = gewichteter Durchschnitt (Schulaufgabe zählt doppelt) · SA Schulaufgabe, Ex Test, mdl mündlich, Ref Referat');
+    return doc;
   }
-  function printVerlauf(){
-    var out='<div class="pr-head"><div><div class="pr-kicker">📚 Notenübersicht</div><h1>Zeugnis-Verlauf</h1></div></div>'
-      +'<div class="pr-meta"><div><span>Name</span>'+esc(D.meta.name||'–')+'</div><div><span>Schule</span>'+esc(D.meta.schule||'–')+'</div></div>';
+  function pdfVerlauf(){
+    var doc=newPdf();if(!doc)return null;
+    pdfBand(doc,'Zeugnis-Verlauf','Notenübersicht',null);
+    var yy=pdfMeta(doc,M+34,[['Name',D.meta.name],['Schule',D.meta.schule],['Aktuelle Klasse',klasseOf(curYear())],['Stand',fmtDate(today())]])+8;
+    var pts=zPts();
+    if(pts.length){
+      var X0=M+12,X1=M+CW-8,Y0=yy+4,H=40;
+      var Y=function(v){return Y0+(Math.min(6,Math.max(1,v))-1)/5*H};
+      var X=function(i){return pts.length===1?(X0+X1)/2:X0+i*(X1-X0)/(pts.length-1)};
+      doc.setLineWidth(.2);doc.setDrawColor.apply(doc,PC.line);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor.apply(doc,PC.mut);
+      for(var g=1;g<=6;g++){doc.line(X0-3,Y(g),X1+3,Y(g));doc.text(String(g),X0-6,Y(g)+1,{align:'right'})}
+      doc.setDrawColor.apply(doc,PC.acc);doc.setLineWidth(.8);
+      for(var i=1;i<pts.length;i++)doc.line(X(i-1),Y(pts[i-1].v),X(i),Y(pts[i].v));
+      pts.forEach(function(p,i){
+        doc.setFillColor.apply(doc,gRGB(p.v));doc.circle(X(i),Y(p.v),4,'F');
+        doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(255,255,255);doc.text(fmt(p.v,1),X(i),Y(p.v)+1,{align:'center'});
+        doc.setFont('helvetica','normal');doc.setTextColor.apply(doc,PC.mut);doc.text(p.l,X(i),Y0+H+9,{align:'center'});
+      });
+      yy=Y0+H+16;
+    }
+    var cols=[{t:'Fach',w:80},{t:'Zwischenzeugnis',w:53,a:'c'},{t:'Jahreszeugnis',w:53,a:'c'}];
     yearsAll().forEach(function(y){
-      var any=D.faecher.some(function(f){return zget(y,'zw',f.id)!=null||zget(y,'jz',f.id)!=null});
-      if(!any&&!klasseOf(y))return;
-      var rows=sortF().map(function(f){
-        var zw=zget(y,'zw',f.id),jz=zget(y,'jz',f.id);if(zw==null&&jz==null)return '';
-        return '<tr><td class="pf"><span>'+icon(f.name)+'</span> '+esc(f.name)+'</td><td class="pn" style="color:'+gcol(zw)+'">'+(zw==null?'–':zw)+'</td><td class="pn" style="color:'+gcol(jz)+'">'+(jz==null?'–':jz)+'</td></tr>';
-      }).join('');
+      var fs=sortF().filter(function(f){return zget(y,'zw',f.id)!=null||zget(y,'jz',f.id)!=null});
+      if(!fs.length)return;
+      var need=14+10+fs.length*8+9;
+      if(yy+need>PH-18){doc.addPage();yy=M}
+      doc.setFont('helvetica','bold');doc.setFontSize(12.5);doc.setTextColor.apply(doc,PC.fg);
+      doc.text('Schuljahr '+y+(klasseOf(y)?' · Klasse '+ansi(klasseOf(y)):''),M,yy+6);
+      yy=pdfHead(doc,yy+9,cols);
+      fs.forEach(function(f){
+        var zw=zget(y,'zw',f.id),jz=zget(y,'jz',f.id);
+        doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor.apply(doc,PC.fg);doc.text(ansi(f.name),M+2.5,yy+5.4);
+        doc.setFontSize(11.5);
+        [zw,jz].forEach(function(v,i){if(v!=null){doc.setTextColor.apply(doc,gRGB(v))}else{doc.setTextColor.apply(doc,PC.mut)}doc.text(v==null?'–':String(v),M+80+i*53+26.5,yy+5.6,{align:'center'})});
+        doc.setDrawColor.apply(doc,PC.line);doc.setLineWidth(.3);doc.line(M,yy+8,M+CW,yy+8);
+        yy+=8;
+      });
       var a=zavg(y,'zw'),b=zavg(y,'jz');
-      out+='<div class="pr-year"><h2>🎓 Schuljahr '+y+(klasseOf(y)?' · Klasse '+esc(klasseOf(y)):'')+'</h2><table class="pr-t"><thead><tr><th>Fach</th><th>Zwischenzeugnis</th><th>Jahreszeugnis</th></tr></thead><tbody>'+(rows||'<tr><td colspan="3" class="pe">Noch keine Zeugnisnoten.</td></tr>')
-        +'<tr class="ps"><td>Schnitt</td><td class="pn">'+(a==null?'–':fmt(a))+'</td><td class="pn">'+(b==null?'–':fmt(b))+'</td></tr></tbody></table></div>';
+      doc.setFillColor(245,242,255);doc.rect(M,yy,CW,9,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor.apply(doc,PC.fg);doc.text('Schnitt',M+2.5,yy+6);
+      doc.setFontSize(11.5);
+      [a,b].forEach(function(v,i){doc.setTextColor.apply(doc,v==null?PC.mut:gRGB(v));doc.text(v==null?'–':fmt(v),M+80+i*53+26.5,yy+6.2,{align:'center'})});
+      yy+=9+9;
     });
-    return out+pFoot();
+    pdfFooters(doc,'Zeugnisnoten wie eingetragen · Schnitt = Durchschnitt der Fächer');
+    return doc;
   }
-  function doPrint(html){
-    $('printArea').innerHTML=html;
-    try{window.print()}catch(e){say('Drucken wird von diesem Gerät nicht unterstützt.')}
+  async function deliverPdf(doc,fname){
+    var blob=doc.output('blob'),file=null;
+    try{file=new File([blob],fname,{type:'application/pdf'})}catch(e){}
+    try{
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:fname});say('PDF erstellt. Im Teilen-Menü findest du „Drucken“ und „In Dateien sichern“.');return}
+    }catch(e){if(e&&e.name==='AbortError'){say('');return}}
+    doc.save(fname);say('PDF erstellt und heruntergeladen.');
   }
   $('app').addEventListener('click',function(e){
     var b=e.target.closest('[data-act^="print-"]');if(!b)return;
-    if(b.dataset.act==='print-blatt')doPrint(printBlatt(b.dataset.y||curYear()));
-    else doPrint(printVerlauf());
+    var y=b.dataset.y||curYear(),verl=b.dataset.act==='print-verlauf';
+    var doc=verl?pdfVerlauf():pdfBlatt(y);
+    if(!doc){say('Die PDF-Funktion ist noch nicht geladen. Bitte kurz warten oder die Seite neu öffnen.');return}
+    var nm=ansi(vorname()).replace(/[^A-Za-z0-9ÄÖÜäöüß-]/g,'')||'Noten';
+    deliverPdf(doc,verl?('Zeugnis-Verlauf-'+nm+'.pdf'):('Notenblatt-'+nm+'-'+y.replace('/','-')+'.pdf'));
   });
 
   /* ---------- Einstellungen (nur Admin) ---------- */
