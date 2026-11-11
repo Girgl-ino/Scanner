@@ -115,11 +115,11 @@
         if (y < h - 1 && mask[p + w] && !lab[p + w]) { lab[p + w] = id; stack[sp++] = p + w; }
       }
       const frac = area / (w * h);
-      if (frac < 0.10 || frac > 0.985) continue;
+      if (frac < 0.10 || frac > 0.93) continue;
       const q = [tl, tr, br, bl], qa = polyArea(q);
       if (qa < 1) continue;
       const rect = Math.min(1, area / qa);
-      const score = rect * rect * Math.sqrt(frac);
+      const score = rect * rect * rect * Math.pow(frac, 0.35);
       if (!best || score > best.score) best = { score, rect, frac, q };
     }
     return best;
@@ -131,6 +131,43 @@
     return [[m, m], [1 - m, m], [1 - m, 1 - m], [m, 1 - m]];
   };
 
+  // Löcher durch Text und Bilder im Blatt schließen (Dilatation, dann Erosion)
+  function closeMask(mask, w, h, r) {
+    const f = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) f[i] = mask[i];
+    const dil = maxFilter(f, w, h, r);
+    for (let i = 0; i < w * h; i++) f[i] = 1 - dil[i];
+    const ero = maxFilter(f, w, h, r);
+    const out = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) out[i] = ero[i] < 0.5 ? 1 : 0;
+    // Innenliegende Löcher (Text, Bilder, Stempel) füllen: alles, was vom Bildrand aus nicht erreichbar ist
+    const outside = new Uint8Array(w * h), st = new Int32Array(w * h);
+    let sp = 0;
+    const push = (p) => { if (!out[p] && !outside[p]) { outside[p] = 1; st[sp++] = p; } };
+    for (let x = 0; x < w; x++) { push(x); push((h - 1) * w + x); }
+    for (let y = 0; y < h; y++) { push(y * w); push(y * w + w - 1); }
+    while (sp) {
+      const p = st[--sp], x = p % w, y = (p / w) | 0;
+      if (x > 0) push(p - 1); if (x < w - 1) push(p + 1);
+      if (y > 0) push(p - w); if (y < h - 1) push(p + w);
+    }
+    for (let i = 0; i < w * h; i++) if (!outside[i]) out[i] = 1;
+    return out;
+  }
+
+  // Seitenverhältnis des Vierecks: extrem schmale Formen sind keine Blätter
+  function shapeOk(q, w, h) {
+    const d = (p, n) => Math.hypot((p[0] - n[0]) / (w - 1), (p[1] - n[1]) / (h - 1) * (h / w));
+    const top = d(q[0], q[1]), bot = d(q[3], q[2]), le = d(q[0], q[3]), ri = d(q[1], q[2]);
+    const W = (top + bot) / 2, H = (le + ri) / 2;
+    if (!W || !H) return 0;
+    const ratio = Math.max(W, H) / Math.min(W, H);
+    if (ratio > 3.2) return 0;
+    // gegenüberliegende Seiten sollten ähnlich lang sein
+    const par = Math.min(top, bot) / Math.max(top, bot) * Math.min(le, ri) / Math.max(le, ri);
+    return par < 0.45 ? 0 : 0.85 + 0.15 * par;
+  }
+
   Scan.detect = function (canvas) {
     const k = 320 / Math.max(canvas.width, canvas.height);
     const w = Math.max(16, Math.round(canvas.width * k)), h = Math.max(16, Math.round(canvas.height * k));
@@ -141,11 +178,52 @@
     for (let i = 0; i < w * h; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
     const b = boxBlur(boxBlur(g, w, h, 2), w, h, 2);
     const th = otsu(b, w * h);
-    const light = new Uint8Array(w * h), dark = new Uint8Array(w * h);
-    for (let i = 0; i < w * h; i++) { if (b[i] > th) light[i] = 1; else dark[i] = 1; }
-    const a = bestBlob(light, w, h), c = bestBlob(dark, w, h);
-    let pick = a;
-    if (c && (!a || c.score > a.score)) pick = c;
+
+    const masks = [];
+    // 1) Helligkeit mit mehreren Schwellen rund um den Otsu-Wert, hell und dunkel
+    [0, -18, 18].forEach((off) => {
+      const t = th + off, light = new Uint8Array(w * h), dark = new Uint8Array(w * h);
+      for (let i = 0; i < w * h; i++) { if (b[i] > t) light[i] = 1; else dark[i] = 1; }
+      masks.push(light, dark);
+    });
+    // 2) Farbabstand zum Hintergrund (Median der Bildränder): trennt auch helles Blatt auf hellem Tisch
+    const br = new Float32Array(w * h), bg = new Float32Array(w * h), bb = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) { br[i] = d[i * 4]; bg[i] = d[i * 4 + 1]; bb[i] = d[i * 4 + 2]; }
+    const R = boxBlur(boxBlur(br, w, h, 2), w, h, 2), G = boxBlur(boxBlur(bg, w, h, 2), w, h, 2), B = boxBlur(boxBlur(bb, w, h, 2), w, h, 2);
+    const edge = [];
+    const m = Math.max(2, Math.round(Math.min(w, h) * 0.04));
+    for (let x = 0; x < w; x++) { edge.push(m * w + x, (h - 1 - m) * w + x); }
+    for (let y = 0; y < h; y++) { edge.push(y * w + m, y * w + (w - 1 - m)); }
+    const med = (arr) => { const c = arr.slice().sort((p, q) => p - q); return c[c.length >> 1]; };
+    const er = med(edge.map((i) => R[i])), eg = med(edge.map((i) => G[i])), eb = med(edge.map((i) => B[i]));
+    const dist = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) dist[i] = Math.hypot(R[i] - er, G[i] - eg, B[i] - eb);
+    const dth = Math.max(14, otsu(dist, w * h));
+    const far = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) far[i] = dist[i] > dth ? 1 : 0;
+    masks.push(far);
+
+    // Kandidaten aus allen Masken sammeln und über ähnliche Rahmen abstimmen lassen
+    const cands = [];
+    masks.forEach((mk) => {
+      const c = bestBlob(closeMask(mk, w, h, 3), w, h);
+      if (!c) return;
+      const so = shapeOk(c.q, w, h);
+      c.score *= so;
+      if (so) cands.push(c);
+    });
+    const near = (p, q) => {
+      let m = 0;
+      for (let i = 0; i < 4; i++) m = Math.max(m, Math.hypot((p[i][0] - q[i][0]) / w, (p[i][1] - q[i][1]) / h));
+      return m < 0.05;
+    };
+    let pick = null;
+    cands.forEach((c) => {
+      let support = 0;
+      cands.forEach((o) => { if (o !== c && near(c.q, o.q)) support += o.score; });
+      c.final = c.score * (1 + 0.6 * support);
+      if (!pick || c.final > pick.final) pick = c;
+    });
     if (!pick || pick.score < 0.5) return { quad: Scan.defaultQuad(), found: false };
     return { quad: pick.q.map((p) => [p[0] / (w - 1), p[1] / (h - 1)]), found: true };
   };
