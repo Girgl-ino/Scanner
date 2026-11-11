@@ -286,26 +286,33 @@
     return { o, file: new File([o.blob], o.filename, { type: o.mime }) };
   }
 
-  $('devSave').onclick = async () => {
-    $('devSave').disabled = true;
+  // Beide Knoepfe nutzen das Teilen-Menue des Handys. Eine Web-App darf weder still in einen Ordner
+  // schreiben noch selbst eine Mail mit Anhang erzeugen. Das Menue ist der einzige erlaubte Weg.
+  async function shareOut(kind) {
+    const btn = kind === 'mail' ? $('mailSave') : $('folderSave');
+    btn.disabled = true;
     setStatus('Wird vorbereitet …');
     try {
       const { o, file } = await makeFile();
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      const data = { files: [file], title: o.filename };
+      if (kind === 'mail') data.text = 'Scan vom ' + new Date().toLocaleDateString('de-DE') + ' im Anhang.';
+      if (navigator.canShare && navigator.canShare(data)) {
         try {
-          await navigator.share({ files: [file], title: o.filename });
-          setStatus('Weitergegeben: ' + o.filename, 'ok');
+          await navigator.share(data);
+          setStatus((kind === 'mail' ? 'An E-Mail übergeben: ' : 'Weitergegeben: ') + o.filename, 'ok');
         } catch (e) {
           if (e && e.name === 'AbortError') setStatus('Abgebrochen. Nichts wurde gespeichert.');
           else throw e;
         }
       } else {
-        setStatus('Teilen wird hier nicht unterstützt. Nutze „Als Datei herunterladen“.', 'err');
+        setStatus('Das Teilen-Menü wird hier nicht unterstützt. Nutze „Als Datei herunterladen“.', 'err');
       }
     } catch (e) {
-      setStatus('Teilen ist nicht möglich (' + ((e && e.name) || 'Fehler') + '). Nutze „Als Datei herunterladen“.', 'err');
-    } finally { $('devSave').disabled = false; }
-  };
+      setStatus('Das ist nicht möglich (' + ((e && e.name) || 'Fehler') + '). Nutze „Als Datei herunterladen“.', 'err');
+    } finally { btn.disabled = false; }
+  }
+  $('folderSave').onclick = () => shareOut('folder');
+  $('mailSave').onclick = () => shareOut('mail');
 
   $('dlSave').onclick = async () => {
     $('dlSave').disabled = true;
