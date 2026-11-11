@@ -18,6 +18,7 @@
 
   // ---------- Liste ----------
   function render() {
+    startNaming();
     $('count').textContent = pages.length + (pages.length === 1 ? ' Seite' : ' Seiten');
     $('saveBtn').disabled = !pages.length;
     const list = $('list');
@@ -242,6 +243,24 @@
     if (queue.length) nextFromQueue(); else closeEditor();
   };
 
+  // ---------- Namensvorschlag aus dem oberen Drittel der ersten Seite ----------
+  let nameHint = '', nameKey = '', nameDirty = false;
+  function namePrefill() {
+    return Ocr.datePrefix() + '_' + (nameHint || 'Scan');
+  }
+  function startNaming() {
+    const p = pages[0];
+    if (!p) { nameHint = ''; nameKey = ''; return; }
+    const key = p.id + ':' + p.resBlob.size;
+    if (key === nameKey) return;
+    nameKey = key; nameHint = '';
+    Ocr.read(p.resBlob).then((txt) => {
+      if (nameKey !== key) return;
+      nameHint = Ocr.suggest(txt);
+      if (!$('sheetScrim').hidden && !nameDirty) $('fname').value = namePrefill();
+    }).catch(() => { /* ohne Erkennung bleibt es bei Datum_Scan */ });
+  }
+
   // ---------- Ablegen ----------
   const cleanName = (s) => (s || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').replace(/\.(pdf|jpe?g|zip)$/i, '').trim().slice(0, 120);
 
@@ -260,16 +279,18 @@
 
   $('saveBtn').onclick = () => {
     if (!pages.length) return;
-    $('fname').value = Pack.stamp();
+    nameDirty = false;
+    $('fname').value = namePrefill();
     setStatus('');
     syncFmt();
     $('sheetScrim').hidden = false;
   };
+  $('fname').addEventListener('input', () => { nameDirty = true; });
   $('sheetClose').onclick = () => { $('sheetScrim').hidden = true; };
   $('sheetScrim').addEventListener('pointerdown', (e) => { if (e.target === $('sheetScrim')) $('sheetScrim').hidden = true; });
 
   async function build() {
-    const name = cleanName($('fname').value) || Pack.stamp();
+    const name = cleanName($('fname').value) || namePrefill();
     if (fmt === 'pdf') {
       const arr = [];
       for (const p of pages) arr.push({ jpeg: await Pack.bytes(p.resBlob), w: p.w, h: p.h });
