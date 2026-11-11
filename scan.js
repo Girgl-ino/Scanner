@@ -168,64 +168,213 @@
     return par < 0.45 ? 0 : 0.85 + 0.15 * par;
   }
 
+  // ---------- Kanten und Linien ----------
+  // Sobel je Farbkanal; pro Pixel zaehlt der Kanal mit der staerksten Kante (findet auch Farbkanten bei gleicher Helligkeit)
+  function edgeField(d, w, h) {
+    const n = w * h, ch = [new Float32Array(n), new Float32Array(n), new Float32Array(n)];
+    for (let i = 0; i < n; i++) { ch[0][i] = d[i * 4]; ch[1][i] = d[i * 4 + 1]; ch[2][i] = d[i * 4 + 2]; }
+    const bl = ch.map((c) => boxBlur(c, w, h, 1));
+    const gx = new Float32Array(n), gy = new Float32Array(n), mag = new Float32Array(n);
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const p = y * w + x;
+      let bm = 0, bx = 0, by = 0;
+      for (let c = 0; c < 3; c++) {
+        const a = bl[c];
+        const sx = (a[p - w + 1] + 2 * a[p + 1] + a[p + w + 1]) - (a[p - w - 1] + 2 * a[p - 1] + a[p + w - 1]);
+        const sy = (a[p + w - 1] + 2 * a[p + w] + a[p + w + 1]) - (a[p - w - 1] + 2 * a[p - w] + a[p - w + 1]);
+        const m = Math.hypot(sx, sy);
+        if (m > bm) { bm = m; bx = sx; by = sy; }
+      }
+      gx[p] = bx / 4; gy[p] = by / 4; mag[p] = bm / 4;
+    }
+    return { gx, gy, mag };
+  }
+
+  function percentile(arr, q) {
+    const c = Float32Array.from(arr).sort();
+    return c[Math.min(c.length - 1, Math.floor(c.length * q))];
+  }
+
+  // Hough-Transformation: nur Winkel nahe der Kantenrichtung stimmen ab -> schnell
+  function houghLines(E, w, h, thr) {
+    const cap = thr * 2.5;
+    const NA = 120, diag = Math.ceil(Math.hypot(w, h)), NR = 2 * diag + 1;
+    const acc = new Float32Array(NA * NR);
+    const cs = new Float32Array(NA), sn = new Float32Array(NA);
+    for (let a = 0; a < NA; a++) { cs[a] = Math.cos(a * Math.PI / NA); sn[a] = Math.sin(a * Math.PI / NA); }
+    for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const p = y * w + x, m = E.mag[p];
+      if (m < thr) continue;
+      let ph = Math.atan2(E.gy[p], E.gx[p]); if (ph < 0) ph += Math.PI; if (ph >= Math.PI) ph -= Math.PI;
+      const a0 = Math.round(ph / Math.PI * NA);
+      for (let da = -3; da <= 3; da++) {
+        const a = (a0 + da + NA) % NA;
+        const r = Math.round(x * cs[a] + y * sn[a]) + diag;
+        acc[a * NR + r] += Math.min(m, cap) / cap * (1 - Math.abs(da) * 0.12);
+      }
+    }
+    // Maxima (Fenster +-3 Winkel, +-6 rho), Winkel zyklisch
+    const peaks = [];
+    for (let a = 0; a < NA; a++) for (let r = 6; r < NR - 6; r++) {
+      const v = acc[a * NR + r];
+      if (v < 25) continue;
+      let ok = true;
+      for (let da = -3; da <= 3 && ok; da++) {
+        const aa = (a + da + NA) % NA;
+        for (let dr = -6; dr <= 6; dr++) { const o = acc[aa * NR + r + dr]; if (o > v || (o === v && (da < 0 || (da === 0 && dr < 0)))) { ok = false; break; } }
+      }
+      if (ok) peaks.push({ th: a * Math.PI / NA, rho: r - diag, v });
+    }
+    peaks.sort((p, q) => q.v - p.v);
+    return peaks.slice(0, 24);
+  }
+
+  function lineIsect(l1, l2) {
+    const c1 = Math.cos(l1.th), s1 = Math.sin(l1.th), c2 = Math.cos(l2.th), s2 = Math.sin(l2.th);
+    const det = c1 * s2 - s1 * c2;
+    if (Math.abs(det) < 0.2) return null;
+    return [(l1.rho * s2 - s1 * l2.rho) / det, (c1 * l2.rho - l1.rho * c2) / det];
+  }
+
+  function angDiff(a, b) { let d = Math.abs(a - b) % Math.PI; return Math.min(d, Math.PI - d); }
+
+  function orderQuad(pts) {
+    let tl = pts[0], br = pts[0], tr = pts[0], bl = pts[0];
+    pts.forEach((p) => {
+      if (p[0] + p[1] < tl[0] + tl[1]) tl = p;
+      if (p[0] + p[1] > br[0] + br[1]) br = p;
+      if (p[0] - p[1] > tr[0] - tr[1]) tr = p;
+      if (p[0] - p[1] < bl[0] - bl[1]) bl = p;
+    });
+    return [tl, tr, br, bl];
+  }
+
+  // Wie viel Kante liegt wirklich entlang der Vierecksseiten? (Anteil 0..1 je Seite)
+  function sideSupport(q, E, w, h, thr) {
+    const res = [];
+    for (let i = 0; i < 4; i++) {
+      const p = q[i], n = q[(i + 1) % 4];
+      const dx = n[0] - p[0], dy = n[1] - p[1], len = Math.hypot(dx, dy);
+      if (len < 8) return null;
+      const nx = -dy / len, ny = dx / len;
+      const steps = Math.max(16, Math.round(len / 2.5));
+      let hit = 0, tot = 0;
+      for (let k = 1; k < steps; k++) {
+        const x = p[0] + dx * k / steps, y = p[1] + dy * k / steps;
+        if (x < 2 || y < 2 || x > w - 3 || y > h - 3) continue;   // ausserhalb des Bildes: nicht zaehlen
+        tot++;
+        let best = 0;
+        for (let o = -3; o <= 3; o++) {
+          const xx = Math.round(x + nx * o), yy = Math.round(y + ny * o), pp = yy * w + xx;
+          const pr = Math.abs(E.gx[pp] * nx + E.gy[pp] * ny);
+          if (pr > best) best = pr;
+        }
+        if (best > thr) hit++;
+      }
+      if (tot < 6) { res.push(0.55); continue; }   // Seite liegt (fast) ausserhalb: neutral
+      res.push(hit / tot);
+    }
+    return res;
+  }
+
+  // Gaengige Papierformate: A-Reihe (1,414), Letter (1,294), Quittung/Foto grob
+  function formatPrior(q, w, h) {
+    const d = (p, n) => Math.hypot(p[0] - n[0], p[1] - n[1]);
+    const W = (d(q[0], q[1]) + d(q[3], q[2])) / 2, H = (d(q[0], q[3]) + d(q[1], q[2])) / 2;
+    if (!W || !H) return 0;
+    const r = Math.max(W, H) / Math.min(W, H);
+    if (r > 3.2) return 0;
+    const m = Math.max(...[1.414, 1.294, 1.5, 1.0].map((f) => Math.exp(-Math.pow((r - f) / 0.07, 2))));
+    return 0.82 + 0.18 * m;
+  }
+
+  function quadFromLines(L, w, h) {
+    const out = [];
+    const minGap = 0.2 * Math.min(w, h);
+    const pairs = [];
+    for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
+      if (angDiff(L[i].th, L[j].th) > 12 * Math.PI / 180) continue;
+      // Abstand der beiden Geraden (senkrecht zur ersten)
+      let dr = Math.abs(L[i].rho - L[j].rho);
+      if (Math.cos(L[i].th - L[j].th) < 0) dr = Math.abs(L[i].rho + L[j].rho);
+      if (dr < minGap) continue;
+      pairs.push([L[i], L[j]]);
+    }
+    for (let a = 0; a < pairs.length; a++) for (let b = a + 1; b < pairs.length; b++) {
+      const P = pairs[a], Q = pairs[b];
+      const tp = (P[0].th + P[1].th) / 2, tq = (Q[0].th + Q[1].th) / 2;
+      const ang = angDiff(tp, tq);
+      if (Math.abs(ang - Math.PI / 2) > 22 * Math.PI / 180) continue;
+      const pts = [lineIsect(P[0], Q[0]), lineIsect(P[0], Q[1]), lineIsect(P[1], Q[0]), lineIsect(P[1], Q[1])];
+      if (pts.some((p) => !p || p[0] < -0.08 * w || p[0] > 1.08 * w || p[1] < -0.08 * h || p[1] > 1.08 * h)) continue;
+      const q = orderQuad(pts), ar = polyArea(q) / (w * h);
+      if (ar < 0.12 || ar > 1.1) continue;
+      out.push({ q, frac: ar });
+    }
+    return out;
+  }
+
   Scan.detect = function (canvas) {
-    const k = 320 / Math.max(canvas.width, canvas.height);
+    const k = 400 / Math.max(canvas.width, canvas.height);
     const w = Math.max(16, Math.round(canvas.width * k)), h = Math.max(16, Math.round(canvas.height * k));
     const s = document.createElement('canvas'); s.width = w; s.height = h;
     const sx = s.getContext('2d'); sx.imageSmoothingQuality = 'high'; sx.drawImage(canvas, 0, 0, w, h);
     const d = sx.getImageData(0, 0, w, h).data;
     const g = new Float32Array(w * h);
     for (let i = 0; i < w * h; i++) g[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+
+    // 1) Kandidaten aus Helligkeits- und Farbflaechen (wie bisher)
     const b = boxBlur(boxBlur(g, w, h, 2), w, h, 2);
     const th = otsu(b, w * h);
-
     const masks = [];
-    // 1) Helligkeit mit mehreren Schwellen rund um den Otsu-Wert, hell und dunkel
     [0, -18, 18].forEach((off) => {
       const t = th + off, light = new Uint8Array(w * h), dark = new Uint8Array(w * h);
       for (let i = 0; i < w * h; i++) { if (b[i] > t) light[i] = 1; else dark[i] = 1; }
       masks.push(light, dark);
     });
-    // 2) Farbabstand zum Hintergrund (Median der Bildränder): trennt auch helles Blatt auf hellem Tisch
     const br = new Float32Array(w * h), bg = new Float32Array(w * h), bb = new Float32Array(w * h);
     for (let i = 0; i < w * h; i++) { br[i] = d[i * 4]; bg[i] = d[i * 4 + 1]; bb[i] = d[i * 4 + 2]; }
     const R = boxBlur(boxBlur(br, w, h, 2), w, h, 2), G = boxBlur(boxBlur(bg, w, h, 2), w, h, 2), B = boxBlur(boxBlur(bb, w, h, 2), w, h, 2);
-    const edge = [];
-    const m = Math.max(2, Math.round(Math.min(w, h) * 0.04));
-    for (let x = 0; x < w; x++) { edge.push(m * w + x, (h - 1 - m) * w + x); }
-    for (let y = 0; y < h; y++) { edge.push(y * w + m, y * w + (w - 1 - m)); }
+    const edgePx = [], mg = Math.max(2, Math.round(Math.min(w, h) * 0.04));
+    for (let x = 0; x < w; x++) edgePx.push(mg * w + x, (h - 1 - mg) * w + x);
+    for (let y = 0; y < h; y++) edgePx.push(y * w + mg, y * w + (w - 1 - mg));
     const med = (arr) => { const c = arr.slice().sort((p, q) => p - q); return c[c.length >> 1]; };
-    const er = med(edge.map((i) => R[i])), eg = med(edge.map((i) => G[i])), eb = med(edge.map((i) => B[i]));
+    const er = med(edgePx.map((i) => R[i])), eg = med(edgePx.map((i) => G[i])), eb = med(edgePx.map((i) => B[i]));
     const dist = new Float32Array(w * h);
     for (let i = 0; i < w * h; i++) dist[i] = Math.hypot(R[i] - er, G[i] - eg, B[i] - eb);
-    const dth = Math.max(14, otsu(dist, w * h));
+    const dth = Math.max(10, otsu(dist, w * h));
     const far = new Uint8Array(w * h);
     for (let i = 0; i < w * h; i++) far[i] = dist[i] > dth ? 1 : 0;
     masks.push(far);
-
-    // Kandidaten aus allen Masken sammeln und über ähnliche Rahmen abstimmen lassen
     const cands = [];
     masks.forEach((mk) => {
       const c = bestBlob(closeMask(mk, w, h, 3), w, h);
-      if (!c) return;
-      const so = shapeOk(c.q, w, h);
-      c.score *= so;
-      if (so) cands.push(c);
+      if (c && shapeOk(c.q, w, h)) cands.push({ q: c.q, frac: polyArea(c.q) / (w * h) });
     });
-    const near = (p, q) => {
-      let m = 0;
-      for (let i = 0; i < 4; i++) m = Math.max(m, Math.hypot((p[i][0] - q[i][0]) / w, (p[i][1] - q[i][1]) / h));
-      return m < 0.05;
-    };
+
+    // 2) Kandidaten aus geraden Kantenlinien (Hough): funktioniert auch bei weissem Blatt auf weissem Tisch
+    const E = edgeField(d, w, h);
+    const med50 = percentile(E.mag, 0.5), p97 = percentile(E.mag, 0.97);
+    const houghThr = Math.max(3.5, 3.5 * med50), supThr = Math.max(3, Math.min(2.2 * med50 + 1, 0.4 * p97));
+    const lines = houghLines(E, w, h, houghThr);
+    quadFromLines(lines, w, h).forEach((c) => cands.push(c));
+
+    // 3) Alle Kandidaten nach Kantenbelegung, Papierformat und Groesse bewerten
     let pick = null;
     cands.forEach((c) => {
-      let support = 0;
-      cands.forEach((o) => { if (o !== c && near(c.q, o.q)) support += o.score; });
-      c.final = c.score * (1 + 0.6 * support);
+      const sup = sideSupport(c.q, E, w, h, supThr);
+      if (!sup) return;
+      const mean = sup.reduce((p, q) => p + q, 0) / 4, mn = Math.min.apply(null, sup);
+      const pr = formatPrior(c.q, w, h);
+      if (!pr) return;
+      const frac = Math.min(c.frac, 0.97);
+      c.sup = mean; c.mn = mn;
+      c.final = Math.pow(0.6 * mean + 0.4 * mn, 1.4) * pr * Math.pow(frac, 0.7);
       if (!pick || c.final > pick.final) pick = c;
     });
-    if (!pick || pick.score < 0.5) return { quad: Scan.defaultQuad(), found: false };
-    return { quad: pick.q.map((p) => [p[0] / (w - 1), p[1] / (h - 1)]), found: true };
+    if (!pick || pick.sup < 0.4 || pick.mn < 0.15 || pick.final < 0.12) return { quad: Scan.defaultQuad(), found: false };
+    const clamp = (v) => Math.max(0, Math.min(1, v));
+    return { quad: pick.q.map((p) => [clamp(p[0] / (w - 1)), clamp(p[1] / (h - 1))]), found: true };
   };
 
   // ---------- Perspektive entzerren ----------

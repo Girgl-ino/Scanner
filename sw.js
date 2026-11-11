@@ -1,5 +1,5 @@
 // Offline-Speicher: nach dem ersten Öffnen läuft die App auch ohne Internet
-const CACHE = 'blattscanner-v2';
+const CACHE = 'blattscanner-v3';
 const FILES = ['./', 'index.html', 'scan.js', 'pdf.js', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
