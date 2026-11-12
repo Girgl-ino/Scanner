@@ -832,7 +832,7 @@ async function readReceipt(blob){
     applyReceipt(r);
   }catch(e){
     if(F!==my||(e&&e.code==='cancelled'))return;
-    my.status='fail';my.msg=SMSG[e&&e.code]||'Der Beleg konnte nicht gelesen werden. Trag die Daten bitte von Hand ein. Das Foto wird trotzdem gespeichert.';
+    my.status='fail';my.msg=(SMSG[e&&e.code]||'Der Beleg konnte nicht gelesen werden. Trag die Daten bitte von Hand ein. Das Foto wird trotzdem gespeichert.')+(e&&e.detail?' (Technisch: '+e.detail+')':'');
   }
   rerenderForm();
 }
@@ -1361,7 +1361,7 @@ function parseJson(t) {
   try { return JSON.parse(t.slice(i, j + 1)); } catch (e) { throw { code: 'invalid_json' }; }
 }
 async function aiJson(prompt, opts) {
-  const key = HH.ai.key;
+  const key = String(HH.ai.key || '').replace(/[^\x21-\x7E]/g, '');
   if (!key) throw { code: 'not_granted' };
   const prov = /^AIza/.test(key) ? 'gemini' : /^sk-ant/.test(key) ? 'claude' : HH.ai.provider;
   const blobs = [].concat((opts && opts.images) || []);
@@ -1369,9 +1369,9 @@ async function aiJson(prompt, opts) {
   let res;
   try {
     if (prov === 'gemini') {
-      res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent', {
+      res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=' + encodeURIComponent(key), {
         method: 'POST', signal: opts && opts.signal,
-        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: b64.map((d) => ({ inline_data: { mime_type: 'image/jpeg', data: d } })).concat([{ text: prompt }]) }],
           generationConfig: { responseMimeType: 'application/json', temperature: 0 } })
       });
@@ -1385,11 +1385,11 @@ async function aiJson(prompt, opts) {
     }
   } catch (e) {
     if (e && e.name === 'AbortError') throw { code: 'cancelled' };
-    throw { code: 'network' };
+    throw { code: 'network', detail: String(e && e.message || e) };
   }
   if (res.status === 429) throw { code: 'rate_limited' };
-  if (res.status === 401 || res.status === 403) throw { code: 'not_granted' };
-  if (!res.ok) throw { code: 'image_rejected' };
+  if (res.status === 401 || res.status === 403) throw { code: 'not_granted', detail: String(res.status) };
+  if (!res.ok) { let t = ''; try { t = (await res.text()).slice(0, 160); } catch (e) {} throw { code: 'image_rejected', detail: res.status + ' ' + t }; }
   const j = await res.json();
   const text = prov === 'gemini'
     ? ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts || []).map((p) => p.text || '').join(''))
