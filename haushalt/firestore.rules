@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function admin() { return request.auth != null && request.auth.uid == 'iil71ppQ7bbpZY05GzZkg0iZZnC2'; }
+    function anwender() { return request.auth != null && request.auth.uid == '122P1Omo50fJ8GlcY1rR3CR4gMC2'; }
+    function mitglied() { return admin() || anwender(); }
+
+    function gueltigeNote(d) {
+      return d.keys().hasOnly(['id','fach','wert','art','gewicht','datum','created','von'])
+        && d.id is string
+        && d.fach is string
+        && d.wert is number && d.wert >= 1 && d.wert <= 6
+        && d.art in ['sa','ex','mdl','ref']
+        && d.gewicht is number && d.gewicht >= 0.5 && d.gewicht <= 3
+        && d.datum is string && d.datum.size() == 10
+        && d.created is number
+        && d.von is string;
+    }
+
+    // Fächer und Einstellungen: alle lesen, nur der Admin ändert
+    match /faecher/{id} {
+      allow read: if mitglied();
+      allow write: if admin();
+    }
+    match /meta/{id} {
+      allow read: if mitglied();
+      allow write: if admin();
+    }
+
+    // Noten: Admin darf alles; der Anwender trägt eigene Noten ein
+    // und kann sie nur in den ersten 15 Minuten wieder löschen
+    match /noten/{id} {
+      allow read: if mitglied();
+      allow create: if admin()
+        || (anwender()
+            && gueltigeNote(request.resource.data)
+            && request.resource.data.von == request.auth.uid
+            && exists(/databases/$(database)/documents/faecher/$(request.resource.data.fach)));
+      allow update: if admin();
+      allow delete: if admin()
+        || (anwender()
+            && resource.data.von == request.auth.uid
+            && request.time.toMillis() < resource.data.created + 900000);
+    }
+
+    // Besuchsprotokoll: nur der Anwender schreibt einen Eintrag, nur der Admin liest und löscht
+    match /besuche/{id} {
+      allow read, delete: if admin();
+      allow create: if anwender()
+        && request.resource.data.keys().hasOnly(['von','t','art','tag'])
+        && request.resource.data.von == request.auth.uid
+        && request.resource.data.t is number
+        && request.resource.data.t > request.time.toMillis() - 600000
+        && request.resource.data.t < request.time.toMillis() + 600000
+        && request.resource.data.art in ['oeffnen','ansicht']
+        && request.resource.data.tag is string
+        && request.resource.data.tag.size() == 10;
+    }
+
+    // Termine (Schulaufgaben, Kurzarbeiten, Referate): beide tragen ein, jeder ändert nur seine eigenen
+    function gueltigerTermin(d) {
+      return d.keys().hasOnly(['id','fach','art','datum','stoff','created','von','done'])
+        && d.id is string
+        && d.fach is string
+        && d.art in ['sa','ex','ref']
+        && d.datum is string && d.datum.size() == 10
+        && d.stoff is string && d.stoff.size() <= 600
+        && d.created is number
+        && d.von is string
+        && d.done is bool;
+    }
+    match /termine/{id} {
+      allow read: if mitglied();
+      allow create: if admin()
+        || (anwender() && gueltigerTermin(request.resource.data) && request.resource.data.von == request.auth.uid);
+      allow update: if admin()
+        || (anwender() && resource.data.von == request.auth.uid
+            && gueltigerTermin(request.resource.data) && request.resource.data.von == request.auth.uid);
+      allow delete: if admin()
+        || (anwender() && resource.data.von == request.auth.uid);
+    }
+
+    // ===== Haushaltsbuch (Sammlungen mit hh_) =====
+    function hhMitglied() {
+      return admin() || (request.auth != null
+        && exists(/databases/$(database)/documents/hh_meta/members)
+        && request.auth.uid in get(/databases/$(database)/documents/hh_meta/members).data.uids);
+    }
+    // Mitgliederliste: jeder Angemeldete darf lesen (nur Vornamen und IDs), nur Georg ändert
+    match /hh_meta/members {
+      allow read: if request.auth != null;
+      allow write: if admin();
+    }
+    // KI-Schlüssel: nur Mitglieder lesen, nur Georg ändert
+    match /hh_meta/ai {
+      allow read: if hhMitglied();
+      allow write: if admin();
+    }
+    // Beitrittsanfrage: jeder legt nur seine eigene an, nur Georg liest und löscht
+    match /hh_requests/{uid} {
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name','email','created']);
+      allow read, delete: if admin();
+    }
+    match /hh_entries/{id}   { allow read, write: if hhMitglied(); }
+    match /hh_recurring/{id} { allow read, write: if hhMitglied(); }
+    match /hh_settings/{id}  { allow read, write: if hhMitglied(); }
+    match /hh_fotos/{id}     { allow read, write: if hhMitglied(); }
+  }
+}
