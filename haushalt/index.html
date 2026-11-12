@@ -312,7 +312,7 @@ var SUBS={
  'Freizeit':['Schwimmbad & Sport','Kino & Veranstaltungen','Ausflug','Spielzeug & Hobby','Bücher & Medien','Sonstiges'],
  'Mobilität':['ÖPNV & Bahn','Parken & Maut','Werkstatt & Reparatur','Sonstiges'],
  'Kinder & Schule':['Schulbedarf','Kita & Betreuung','Vereine & Kurse','Sonstiges'],
- 'Wohnen & Fixkosten':['Versicherung','Miete & Nebenkosten','Strom, Gas & Wasser','Internet & Handy','Kredit & Raten','Abos & Mitgliedschaften','Sonstiges']
+ 'Wohnen & Fixkosten':['Versicherung','Miete & Nebenkosten','Strom, Gas & Wasser','Internet & Handy','Kredit & Raten','Abos & Mitgliedschaften','Putzfrau','Sonstiges']
 };
 var ICONS={
  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
@@ -603,6 +603,7 @@ function home(){
   h+='<section class="hero"><p class="eyebrow">Ausgaben im '+esc(monthName(S.month))+'</p><p class="big">'+fmt(st.exp)+'</p><div class="seg" aria-hidden="true">'+segs+'</div>'+
     '<dl class="trio"><div><dt>Einnahmen</dt><dd>'+fmt(st.inc)+'</dd></div><div><dt>Übrig</dt><dd class="'+(bal<0?'neg':'pos')+'">'+fmt(bal)+'</dd></div><div><dt>Fixkosten</dt><dd>'+fmt(st.fixExp)+'</dd></div></dl></section>';
   h+='<section class="card"><h2>Monatsbilanz</h2><p class="sub">'+esc(monthLabel(S.month))+'</p><p class="balbig'+(bal<0?' neg':'')+'">'+fmt(bal)+'</p><p class="sub">bleibt in diesem Monat übrig</p><dl class="kv" style="margin-top:8px"><div><dt>Einnahmen</dt><dd>+'+fmt(st.inc)+'</dd></div><div><dt>Einkäufe und Belege</dt><dd>−'+fmt(st.entExp)+'</dd></div><div><dt>Fixkosten (Versicherungen usw.)</dt><dd>−'+fmt(st.fixExp)+'</dd></div></dl><button class="linkbtn" data-a="fix">Fixkosten und feste Einnahmen verwalten</button></section>';
+  h+=fixCard();
   if(S.scope==='all'){var sm=monthStats(S.month,'me'),so2=monthStats(S.month,'other');h+='<section class="card"><h2>Wer was</h2><p class="sub">'+esc(monthLabel(S.month))+' · Einnahmen und Ausgaben</p><dl class="kv"><div><dt>'+esc(myName())+'</dt><dd>+'+fmt(sm.inc)+' · −'+fmt(sm.exp)+'</dd></div><div><dt>'+esc(otherName())+'</dt><dd>+'+fmt(so2.inc)+' · −'+fmt(so2.exp)+'</dd></div></dl></section>';}
   var allInc=0,allExp=0,avail=0,_old='<section class="card"><p class="sub">Verfügbar insgesamt</p><p class="balbig'+(avail<0?' neg':'')+'">'+fmt(avail)+'</p><dl class="kv" style="margin-top:8px"><div><dt>Startguthaben</dt><dd>'+fmt(S.start)+'</dd></div><div><dt>Einnahmen gesamt</dt><dd>+'+fmt(allInc)+'</dd></div><div><dt>Ausgaben gesamt</dt><dd>−'+fmt(allExp)+'</dd></div></dl>'+(S.canWrite?'<button class="linkbtn" data-a="balance">Startguthaben festlegen</button>':'')+'</section>';
   if(noData&&S.canWrite){
@@ -925,6 +926,23 @@ function mine(x){if(!S.me)return true;return x.by?x.by===S.me:S.isOwner;}
 function inScope(x,sc){sc=sc||S.scope;return sc==='all'||((sc==='me')===mine(x));}
 function ents(sc){return S.entries.filter(function(e){return inScope(e,sc);});}
 
+function subSel(){
+  var base=SUBS[R.cat]||[],cur=R.sub||'',custom=!!cur&&base.indexOf(cur)<0,isNew=custom||!!R.subNew;
+  return '<label class="field"><span>Unterkategorie</span><select class="sel" id="r-sub" style="width:100%"><option value="">Keine</option>'+base.map(function(s){return '<option'+(s===cur?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'<option value="__new"'+(isNew?' selected':'')+'>Eigene Unterkategorie …</option></select></label>'+
+    (isNew?'<label class="field"><span>Name der Unterkategorie</span><input class="input" id="r-subtext" maxlength="40" autocomplete="off" placeholder="Zum Beispiel Putzfrau" value="'+esc(cur)+'"></label>':'');
+}
+function fixCard(){
+  var list=recActive(S.month);if(!list.length)return '';
+  var ex=list.filter(function(r){return r.type!=='income';}).sort(function(a,b){return b.amount-a.amount;}),inc=list.filter(function(r){return r.type==='income';}).sort(function(a,b){return b.amount-a.amount;});
+  var sE=ex.reduce(function(a,r){return a+r.amount;},0),sI=inc.reduce(function(a,r){return a+r.amount;},0);
+  function row(r){
+    var meta=catMeta(r.cat,r.type),isI=r.type==='income';
+    var small=(r.sub?r.cat+' › '+r.sub:r.cat)+' · '+freqLabel(r)+(r.occ>1?' ('+r.occ+'× '+fmt(r.unit)+')':'');
+    return '<button class="row" data-a="fix"><span class="bubble" style="--c:'+meta.color+'">'+icon(meta.icon,22)+'</span><span class="rt"><b>'+esc(r.title||r.sub||r.cat)+'</b><small style="white-space:normal">'+esc(small)+'</small></span><span class="amt '+(isI?'income':'')+'">'+(isI?'+':'−')+fmt(r.amount)+'</span></button>';
+  }
+  return '<section class="card"><h2>Fixkosten</h2><p class="sub">'+esc(monthLabel(S.month))+' · −'+fmt(sE)+(sI>0?' · feste Einnahmen +'+fmt(sI):'')+'</p><div class="rows" style="box-shadow:none;border:0;padding:0">'+ex.concat(inc).map(row).join('')+'</div>'+(S.canWrite?'<button class="linkbtn" data-a="fix">Fixkosten verwalten</button>':'')+'</section>';
+}
+
 /* ---------- Fixkosten: Rhythmus (monatlich, wöchentlich, alle 2 Wochen, n-ter Wochentag) ---------- */
 var WDN=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 var NTHN={1:'ersten',2:'zweiten',3:'dritten',4:'vierten','last':'letzten'};
@@ -993,7 +1011,7 @@ function fixHTML(){
   var rows=all.map(function(r){
     var inc=r.type==='income',meta=catMeta(r.cat,r.type);
     var per=freqLabel(r)+((r.freq&&r.freq!=='monthly')?' ('+recOcc(r,S.month)+'× im '+monthLabel(S.month).split(' ')[0]+')':'')+' · ab '+monthLabel(r.from)+(r.to?' bis '+monthLabel(r.to):'');
-    return '<button class="row" data-a="recedit" data-v="'+esc(r.id)+'"><span class="bubble" style="--c:'+meta.color+'">'+icon(meta.icon,22)+'</span><span class="rt"><b>'+esc(r.title||r.cat)+'</b><small>'+esc((r.sub||r.cat)+' · '+per)+'</small></span><span class="amt '+(inc?'income':'')+'">'+(inc?'+':'−')+fmt(r.amount)+'</span></button>';
+    return '<button class="row" data-a="recedit" data-v="'+esc(r.id)+'"><span class="bubble" style="--c:'+meta.color+'">'+icon(meta.icon,22)+'</span><span class="rt"><b>'+esc(r.title||r.cat)+'</b><small>'+esc((r.sub?r.cat+' › '+r.sub:r.cat)+' · '+per)+'</small></span><span class="amt '+(inc?'income':'')+'">'+(inc?'+':'−')+fmt(r.amount)+'</span></button>';
   }).join('');
   return '<div class="handle"></div><div class="fh"><h2>Fixkosten</h2><button class="ib" data-a="close" aria-label="Schließen">'+icon('x')+'</button></div>'+
     '<p class="sub">Versicherungen, Miete, Raten, Abos und feste Einnahmen wie Gehalt oder Kindergeld trägst du hier einmal ein. Sie zählen dann automatisch in jedem Monat mit.</p>'+
@@ -1005,7 +1023,7 @@ function recFormHTML(){
   var inc=R.type==='income';
   var cats=inc?INCATS:CATS.map(function(c){return c.id;});
   var co=cats.map(function(c){return '<option'+(c===R.cat?' selected':'')+'>'+esc(c)+'</option>';}).join('');
-  var so=(!inc&&SUBS[R.cat])?'<label class="field"><span>Unterkategorie</span><select class="sel" id="r-sub" style="width:100%"><option value="">Keine</option>'+SUBS[R.cat].map(function(s){return '<option'+(s===R.sub?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select></label>':'';
+  var so=!inc?subSel():'';var _so0=(!inc&&SUBS[R.cat])?'<label class="field"><span>Unterkategorie</span><select class="sel" id="r-sub" style="width:100%"><option value="">Keine</option>'+SUBS[R.cat].map(function(s){return '<option'+(s===R.sub?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select></label>':'';
   return '<div class="handle"></div><div class="fh"><h2>'+(R.id?'Bearbeiten':'Neu')+'</h2><button class="ib" data-a="fix" aria-label="Zurück">'+icon('left')+'</button></div>'+
     '<div class="seg2" role="group" aria-label="Art"><button data-a="rectype" data-v="expense" aria-pressed="'+(!inc)+'">Fixkosten</button><button data-a="rectype" data-v="income" aria-pressed="'+inc+'">Feste Einnahme</button></div>'+
     '<label class="field"><span>Bezeichnung</span><input class="input" id="r-title" maxlength="80" autocomplete="off" placeholder="'+(inc?'Zum Beispiel Gehalt':'Zum Beispiel Haftpflichtversicherung')+'" value="'+esc(R.title)+'"></label>'+
@@ -1019,7 +1037,7 @@ function recFormHTML(){
 function syncRec(){
   if(!R||!$('#r-title'))return;
   R.title=$('#r-title').value;R.amount=$('#r-amount').value;R.from=$('#r-from').value;R.to=$('#r-to').value;R.cat=$('#r-cat').value;
-  if($('#r-sub'))R.sub=$('#r-sub').value;
+  if($('#r-sub')){var sv=$('#r-sub').value;if(sv==='__new'){R.subNew=true;var stx=$('#r-subtext');R.sub=stx?stx.value.trim():(R.sub||'');}else{R.subNew=false;R.sub=sv;}}
   if($('#r-freq'))R.freq=$('#r-freq').value;
   if($('#r-day'))R.day=$('#r-day').value==='last'?'last':+$('#r-day').value;
   if($('#r-wd'))R.wd=+$('#r-wd').value;
@@ -1349,7 +1367,8 @@ document.addEventListener('change',function(ev){
   if(F&&d.ic!==undefined){F.items[+d.ic].cat=t.value;F.items[+d.ic].sub='';F.touched.items=1;rerenderForm();}
   if(F&&d.isub!==undefined){F.items[+d.isub].sub=t.value;F.touched.items=1;}
   if(F&&d.fsub!==undefined){F.sub=t.value;}
-  if(t.id==='r-cat'&&R){syncRec();R.sub='';$('#fixroot').innerHTML=recFormHTML();}
+  if(t.id==='r-sub'&&R){syncRec();$('#fixroot').innerHTML=recFormHTML();}
+  if(t.id==='r-cat'&&R){syncRec();R.sub='';R.subNew=false;$('#fixroot').innerHTML=recFormHTML();}
   if(t.id==='r-freq'&&R){syncRec();$('#fixroot').innerHTML=recFormHTML();}
   if(t.id==='fcat'){S.f.cat=t.value;render();}
 });
