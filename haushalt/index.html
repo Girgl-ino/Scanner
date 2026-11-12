@@ -1354,6 +1354,21 @@ const dbAdapter = {
 };
 
 /* ---------- Beleg lesen: eigener Schlüssel (Claude oder Gemini), gespeichert in hh_meta/ai ---------- */
+function shrink(blob) {
+  return new Promise((res) => {
+    const url = URL.createObjectURL(blob); const i = new Image();
+    i.onload = () => {
+      try {
+        const m = 1600, k = Math.min(1, m / Math.max(i.width, i.height));
+        const c = document.createElement('canvas'); c.width = Math.round(i.width * k); c.height = Math.round(i.height * k);
+        c.getContext('2d').drawImage(i, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob((b) => res(b || blob), 'image/jpeg', 0.82);
+      } catch (e) { URL.revokeObjectURL(url); res(blob); }
+    };
+    i.onerror = () => { URL.revokeObjectURL(url); res(blob); };
+    i.src = url;
+  });
+}
 function blobB64(b) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(b); }); }
 function parseJson(t) {
   const i = t.indexOf('{'), j = t.lastIndexOf('}');
@@ -1365,7 +1380,7 @@ async function aiJson(prompt, opts) {
   if (!key) throw { code: 'not_granted' };
   const prov = /^AIza/.test(key) ? 'gemini' : /^sk-ant/.test(key) ? 'claude' : HH.ai.provider;
   const blobs = [].concat((opts && opts.images) || []);
-  const b64 = await Promise.all(blobs.map(blobB64));
+  const b64 = await Promise.all(blobs.map((b) => shrink(b).then(blobB64)));
   let res;
   try {
     if (prov === 'gemini') {
@@ -1385,7 +1400,13 @@ async function aiJson(prompt, opts) {
     }
   } catch (e) {
     if (e && e.name === 'AbortError') throw { code: 'cancelled' };
-    throw { code: 'network', detail: String(e && e.message || e) };
+    let probe = '';
+    try {
+      const u = prov === 'gemini' ? 'https://generativelanguage.googleapis.com/v1beta/models?key=' + encodeURIComponent(key) : 'https://api.anthropic.com/v1/models';
+      const pr = await fetch(u, prov === 'gemini' ? {} : { headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' } });
+      probe = ' · Test-Anfrage: ' + pr.status;
+    } catch (e2) { probe = ' · Test-Anfrage: blockiert'; }
+    throw { code: 'network', detail: String(e && e.message || e) + probe + ' · ' + prov + ' · ' + Math.round(b64.join('').length / 1024) + ' KB' };
   }
   if (res.status === 429) throw { code: 'rate_limited' };
   if (res.status === 401 || res.status === 403) throw { code: 'not_granted', detail: String(res.status) };
