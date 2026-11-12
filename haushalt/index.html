@@ -428,7 +428,7 @@ function catItems(cat){
     if(hasItems(e)){e.items.forEach(function(i){if(i.cat===cat)add(i.name,i.amount,i.qty||1,false,i.sub);});}
     else parts(e).forEach(function(p){if(p.cat===cat)add(e.title||p.cat,p.amount,1,true,'');});
   });
-  ms.forEach(function(k){recActive(k).forEach(function(r){if(r.type!=='income'&&r.cat===cat)add(r.title||r.cat,r.amount,1,true,r.sub||'','Fixkosten, monatlich');});});
+  ms.forEach(function(k){recActive(k).forEach(function(r){if(r.type!=='income'&&r.cat===cat)add(r.title||r.cat,r.amount,1,true,r.sub||'','Fixkosten, '+freqLabel(r));});});
   var list=Object.keys(groups).map(function(k){
     var g=groups[k];
     g.rows=Object.keys(g.agg).map(function(x){return g.agg[x];}).sort(function(a,b){return b.sum-a.sum;});
@@ -451,7 +451,7 @@ function catItemsV2(cat){
     if(hasItems(e)){e.items.forEach(function(i){if(i.cat===cat)add(i.name,i.amount,i.qty||1,false,i.sub);});}
     else parts(e).forEach(function(p){if(p.cat===cat)add(e.title||p.cat,p.amount,1,true,'');});
   });
-  ms.forEach(function(k){recActive(k).forEach(function(r){if(r.type!=='income'&&r.cat===cat)add(r.title||r.cat,r.amount,1,true,r.sub||'','Fixkosten, monatlich');});});
+  ms.forEach(function(k){recActive(k).forEach(function(r){if(r.type!=='income'&&r.cat===cat)add(r.title||r.cat,r.amount,1,true,r.sub||'','Fixkosten, '+freqLabel(r));});});
   var rows=Object.keys(agg).map(function(k){return agg[k];}).sort(function(a,b){return b.sum-a.sum;});
   return {rows:rows,total:total,subs:subs};
 }
@@ -924,7 +924,42 @@ function fuelBlock(cat){
 function mine(x){if(!S.me)return true;return x.by?x.by===S.me:S.isOwner;}
 function inScope(x,sc){sc=sc||S.scope;return sc==='all'||((sc==='me')===mine(x));}
 function ents(sc){return S.entries.filter(function(e){return inScope(e,sc);});}
-function recActive(k,sc){return S.rec.filter(function(r){return inScope(r,sc)&&r.from<=k&&(!r.to||r.to>=k);});}
+
+/* ---------- Fixkosten: Rhythmus (monatlich, wöchentlich, alle 2 Wochen, n-ter Wochentag) ---------- */
+var WDN=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+var NTHN={1:'ersten',2:'zweiten',3:'dritten',4:'vierten','last':'letzten'};
+function recOcc(r,k){
+  var f=r.freq||'monthly';if(f==='monthly')return 1;
+  var y=+k.slice(0,4),m=+k.slice(5,7)-1,dim=new Date(y,m+1,0).getDate(),wd=isFinite(r.wd)&&r.wd!==null?+r.wd:1,n=0;
+  var a=r.anchor?new Date(r.anchor+'T00:00:00'):null;
+  for(var d=1;d<=dim;d++){
+    var dt=new Date(y,m,d),w=dt.getDay();
+    if(f==='weekly'){if(w===wd)n++;}
+    else if(f==='biweekly'){if(a){var diff=Math.round((dt-a)/864e5);if(diff>=0&&diff%14===0)n++;}}
+    else if(f==='nth'){if(w===wd){var nth=Math.floor((d-1)/7)+1,last=d+7>dim;if(r.nth==='last'?last:nth===+r.nth)n++;}}
+  }
+  return n;
+}
+function freqLabel(r){
+  var f=r.freq||'monthly',wd=isFinite(r.wd)&&r.wd!==null?+r.wd:1;
+  if(f==='weekly')return 'jede Woche, '+WDN[wd].toLowerCase()+'s';
+  if(f==='biweekly')return 'alle 2 Wochen'+(r.anchor?', ab '+r.anchor.slice(8,10)+'.'+r.anchor.slice(5,7)+'.'+r.anchor.slice(0,4):'');
+  if(f==='nth')return 'jeden '+(NTHN[r.nth]||'ersten')+' '+WDN[wd]+' im Monat';
+  return r.day==='last'?'monatlich, am Monatsende':(r.day&&r.day>1?'monatlich, am '+r.day+'.':(r.day==1?'monatlich, am 1.':'monatlich'));
+}
+function freqFields(){
+  var f=R.freq||'monthly';
+  function opt(v,l,cur){return '<option value="'+v+'"'+(String(cur)===String(v)?' selected':'')+'>'+l+'</option>';}
+  var wdo=[1,2,3,4,5,6,0].map(function(i){return opt(i,WDN[i],R.wd==null?1:R.wd);}).join('');
+  var fo=[['monthly','Jeden Monat'],['weekly','Jede Woche'],['biweekly','Alle 2 Wochen'],['nth','Jeder erste, letzte … Wochentag']].map(function(x){return opt(x[0],x[1],f);}).join('');
+  var h='<label class="field"><span>Wie oft?</span><select class="sel" id="r-freq" style="width:100%">'+fo+'</select></label>';
+  if(f==='monthly'){var d='';for(var i=1;i<=28;i++)d+=opt(i,i+'. des Monats',R.day==null?1:R.day);d+=opt('last','Letzter Tag im Monat',R.day);h+='<label class="field"><span>Zahltag</span><select class="sel" id="r-day" style="width:100%">'+d+'</select></label>';}
+  else if(f==='weekly')h+='<label class="field"><span>Wochentag</span><select class="sel" id="r-wd" style="width:100%">'+wdo+'</select></label>';
+  else if(f==='biweekly')h+='<label class="field"><span>Erste Zahlung am (danach alle 14 Tage)</span><input class="input" id="r-anchor" type="date" value="'+esc(R.anchor||'')+'"></label>';
+  else h+='<label class="field"><span>Welcher?</span><select class="sel" id="r-nth" style="width:100%">'+[[1,'Der erste'],[2,'Der zweite'],[3,'Der dritte'],[4,'Der vierte'],['last','Der letzte']].map(function(x){return opt(x[0],x[1],R.nth==null?1:R.nth);}).join('')+'</select></label><label class="field"><span>Wochentag</span><select class="sel" id="r-wd" style="width:100%">'+wdo+'</select></label>';
+  return h;
+}
+function recActive(k,sc){var out=[];S.rec.forEach(function(r){if(!(inScope(r,sc)&&r.from<=k&&(!r.to||r.to>=k)))return;var n=recOcc(r,k);if(n<1)return;out.push(Object.assign({},r,{unit:r.amount,occ:n,amount:Math.round(r.amount*n*100)/100}));});return out;}
 function myName(){return S.names[S.me]||'Ich';}
 function otherName(){
   var id=null;
@@ -957,7 +992,7 @@ function fixHTML(){
   var all=S.rec.filter(function(r){return inScope(r,S.scope);}).sort(function(a,b){return (a.type===b.type?0:(a.type==='income'?-1:1))||b.amount-a.amount;});
   var rows=all.map(function(r){
     var inc=r.type==='income',meta=catMeta(r.cat,r.type);
-    var per='ab '+monthLabel(r.from)+(r.to?' bis '+monthLabel(r.to):'');
+    var per=freqLabel(r)+((r.freq&&r.freq!=='monthly')?' ('+recOcc(r,S.month)+'× im '+monthLabel(S.month).split(' ')[0]+')':'')+' · ab '+monthLabel(r.from)+(r.to?' bis '+monthLabel(r.to):'');
     return '<button class="row" data-a="recedit" data-v="'+esc(r.id)+'"><span class="bubble" style="--c:'+meta.color+'">'+icon(meta.icon,22)+'</span><span class="rt"><b>'+esc(r.title||r.cat)+'</b><small>'+esc((r.sub||r.cat)+' · '+per)+'</small></span><span class="amt '+(inc?'income':'')+'">'+(inc?'+':'−')+fmt(r.amount)+'</span></button>';
   }).join('');
   return '<div class="handle"></div><div class="fh"><h2>Fixkosten</h2><button class="ib" data-a="close" aria-label="Schließen">'+icon('x')+'</button></div>'+
@@ -974,7 +1009,7 @@ function recFormHTML(){
   return '<div class="handle"></div><div class="fh"><h2>'+(R.id?'Bearbeiten':'Neu')+'</h2><button class="ib" data-a="fix" aria-label="Zurück">'+icon('left')+'</button></div>'+
     '<div class="seg2" role="group" aria-label="Art"><button data-a="rectype" data-v="expense" aria-pressed="'+(!inc)+'">Fixkosten</button><button data-a="rectype" data-v="income" aria-pressed="'+inc+'">Feste Einnahme</button></div>'+
     '<label class="field"><span>Bezeichnung</span><input class="input" id="r-title" maxlength="80" autocomplete="off" placeholder="'+(inc?'Zum Beispiel Gehalt':'Zum Beispiel Haftpflichtversicherung')+'" value="'+esc(R.title)+'"></label>'+
-    '<label class="field"><span>Betrag pro Monat</span><div class="amountbox"><input id="r-amount" inputmode="decimal" autocomplete="off" placeholder="0,00" value="'+esc(R.amount)+'"><b>€</b></div></label>'+
+    freqFields()+'<label class="field"><span>'+(R.freq&&R.freq!=='monthly'?'Betrag pro Zahlung':'Betrag pro Monat')+'</span><div class="amountbox"><input id="r-amount" inputmode="decimal" autocomplete="off" placeholder="0,00" value="'+esc(R.amount)+'"><b>€</b></div></label>'+
     '<label class="field"><span>Kategorie</span><select class="sel" id="r-cat" style="width:100%">'+co+'</select></label>'+so+
     '<label class="field"><span>Ab Monat</span><input class="input" id="r-from" type="month" value="'+esc(R.from)+'"></label>'+
     '<label class="field"><span>Bis Monat (leer = unbefristet)</span><input class="input" id="r-to" type="month" value="'+esc(R.to)+'"></label>'+
@@ -985,15 +1020,21 @@ function syncRec(){
   if(!R||!$('#r-title'))return;
   R.title=$('#r-title').value;R.amount=$('#r-amount').value;R.from=$('#r-from').value;R.to=$('#r-to').value;R.cat=$('#r-cat').value;
   if($('#r-sub'))R.sub=$('#r-sub').value;
+  if($('#r-freq'))R.freq=$('#r-freq').value;
+  if($('#r-day'))R.day=$('#r-day').value==='last'?'last':+$('#r-day').value;
+  if($('#r-wd'))R.wd=+$('#r-wd').value;
+  if($('#r-nth'))R.nth=$('#r-nth').value==='last'?'last':+$('#r-nth').value;
+  if($('#r-anchor'))R.anchor=$('#r-anchor').value;
 }
 async function saveRec(){
   syncRec();
   var er=function(m){var el=$('#r-err');if(el)el.textContent=m;};
   var amount=parseAmt(R.amount);
   if(!(amount>0))return er('Bitte gib einen Betrag ein.');
+  if(R.freq==='biweekly'&&!/^\d{4}-\d{2}-\d{2}$/.test(R.anchor||''))return er('Bitte wähle den Tag der ersten Zahlung.');
   if(!/^\d{4}-\d{2}$/.test(R.from))return er('Bitte wähle den Monat, ab dem es gilt.');
   if(R.to&&(!/^\d{4}-\d{2}$/.test(R.to)||R.to<R.from))return er('Das Ende darf nicht vor dem Start liegen.');
-  var doc={by:R.id?(R.by||null):(S.me||null),type:R.type,title:R.title.trim(),amount:round2(amount),cat:R.cat,sub:R.type==='income'?'':(R.sub||''),from:R.from,to:R.to||null,updatedAt:Date.now()};
+  var doc={by:R.id?(R.by||null):(S.me||null),type:R.type,title:R.title.trim(),amount:round2(amount),cat:R.cat,sub:R.type==='income'?'':(R.sub||''),from:R.from,to:R.to||null,freq:R.freq||'monthly',day:(R.freq||'monthly')==='monthly'?(R.day==null?1:R.day):null,wd:(R.freq==='weekly'||R.freq==='nth')?(R.wd==null?1:R.wd):null,nth:R.freq==='nth'?(R.nth==null?1:R.nth):null,anchor:R.freq==='biweekly'?R.anchor:null,updatedAt:Date.now()};
   try{
     if(S.caps.db){var id=R.id||S.caps.db.collection('recurring').doc().id;await S.caps.db.doc('recurring/'+id).set(doc);}
     else{doc.id=R.id||('l'+Date.now());S.rec=S.rec.filter(function(x){return x.id!==doc.id;}).concat([doc]);}
@@ -1259,10 +1300,10 @@ var ACT={
     S.detail.open=o;var r=$('#catroot');if(r)r.innerHTML=catDetailHTML();
   },
   fix:function(){R=null;var r=$('#fixroot');if(r)r.innerHTML=fixHTML();else openSheet('<div id="fixroot">'+fixHTML()+'</div>');},
-  recnew:function(){if(!S.canWrite)return;R={id:null,type:'expense',title:'',amount:'',cat:'Wohnen & Fixkosten',sub:'',from:S.month,to:''};$('#fixroot').innerHTML=recFormHTML();},
+  recnew:function(){if(!S.canWrite)return;R={id:null,type:'expense',title:'',amount:'',cat:'Wohnen & Fixkosten',sub:'',from:S.month,to:'',freq:'monthly',day:1,wd:1,nth:1,anchor:''};$('#fixroot').innerHTML=recFormHTML();},
   recedit:function(v){
     if(!S.canWrite)return;var r=S.rec.find(function(x){return x.id===v;});if(!r)return;
-    R={id:r.id,by:r.by||null,type:r.type,title:r.title||'',amount:toAmtStr(r.amount),cat:r.cat,sub:r.sub||'',from:r.from,to:r.to||''};$('#fixroot').innerHTML=recFormHTML();
+    R={id:r.id,by:r.by||null,type:r.type,title:r.title||'',amount:toAmtStr(r.amount),cat:r.cat,sub:r.sub||'',from:r.from,to:r.to||'',freq:r.freq||'monthly',day:r.day==null?1:r.day,wd:r.wd==null?1:r.wd,nth:r.nth==null?1:r.nth,anchor:r.anchor||''};$('#fixroot').innerHTML=recFormHTML();
   },
   rectype:function(v){syncRec();R.type=v;R.cat=v==='income'?'Gehalt':'Wohnen & Fixkosten';R.sub='';$('#fixroot').innerHTML=recFormHTML();},
   recsave:function(){saveRec();},
@@ -1309,6 +1350,7 @@ document.addEventListener('change',function(ev){
   if(F&&d.isub!==undefined){F.items[+d.isub].sub=t.value;F.touched.items=1;}
   if(F&&d.fsub!==undefined){F.sub=t.value;}
   if(t.id==='r-cat'&&R){syncRec();R.sub='';$('#fixroot').innerHTML=recFormHTML();}
+  if(t.id==='r-freq'&&R){syncRec();$('#fixroot').innerHTML=recFormHTML();}
   if(t.id==='fcat'){S.f.cat=t.value;render();}
 });
 document.addEventListener('change',function(ev){
