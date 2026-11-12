@@ -544,7 +544,7 @@ function banners(){
   else if(!S.canWrite)b+='<p class="notice warn">Du kannst die Daten ansehen, aber nicht ändern. Bitte lass dich als Bearbeiter zum Haushaltsbuch einladen.</p>';
   if(!S.caps.images&&S.canWrite)b+='<p class="notice">Die automatische Beleg-Erkennung ist noch nicht eingerichtet. Tipp auf das Zahnrad oben rechts, um den Schlüssel einzutragen.</p>';
   if(window.HH.isAdmin&&window.HH.requests.length)b+='<button class="notice warn linkish" data-a="settings">'+window.HH.requests.length+' Person wartet auf deine Freigabe</button>';
-  if(pendingList().length)b+='<p class="notice">'+pendingList().length+(pendingList().length>1?' Belege warten':' Beleg wartet')+' auf die automatische Erkennung. '+(PQ.busy?'Wird gerade gelesen …':'Die App versucht es von selbst weiter, solange sie geöffnet ist.')+(Object.keys(PQ.err).length?' Letzter Fehler: '+esc(PQ.err[Object.keys(PQ.err).pop()])+'.':'')+' <button class="btn" data-a="pqnow">Jetzt erneut versuchen</button></p>';
+  if(pendingList().length)b+='<p class="notice">'+pendingList().length+(pendingList().length>1?' Belege warten':' Beleg wartet')+' auf die automatische Erkennung. '+(PQ.busy?'Wird gerade gelesen …':'Die App versucht es von selbst weiter, solange sie geöffnet ist.')+(Object.keys(PQ.err).length?' Letzter Fehler: '+esc(PQ.err[Object.keys(PQ.err).pop()])+'.':'')+'<br><button class="btn" style="margin-top:8px" data-a="pqnow">Jetzt erneut versuchen</button></p>';
   if(S.loadErr)b+='<p class="notice warn">Die Daten konnten nicht geladen werden. Bitte öffne die Seite neu.</p>';
   else if(S.slow&&!S.loaded)b+='<p class="notice">Die Daten brauchen länger als gewöhnlich. Prüf bitte deine Verbindung.</p>';
   return b;
@@ -1132,6 +1132,7 @@ async function pendingTick(){
   var e=pendingList().filter(function(x){return !PQ.next[x.id]||PQ.next[x.id]<=Date.now();})[0];
   if(!e)return;
   PQ.busy=true;PQ.cur=e.id;if(S.tab==='home'||true)try{render();}catch(x){}
+  var __wd=setTimeout(function(){if(PQ.busy&&PQ.cur===e.id){PQ.err[e.id]='haengt (Zeitueberschreitung)';PQ.next[e.id]=Date.now()+20000;PQ.busy=false;PQ.cur=null;try{render();}catch(x){}}},100000);
   try{
     var blobs=[],imgs=[e.img].concat(e.more||[]).filter(Boolean);
     for(var i=0;i<imgs.length;i++){
@@ -1170,7 +1171,8 @@ async function pendingTick(){
       try{await S.caps.db.doc('entries/'+e.id).set(d2);}catch(x){}
     }else PQ.next[e.id]=Date.now()+60000;
   }
-  PQ.busy=false;PQ.cur=null;
+  clearTimeout(__wd);
+  if(PQ.cur===e.id){PQ.busy=false;PQ.cur=null;}
   try{render();}catch(x){}
   setTimeout(pendingTick,1500);
 }
@@ -1459,16 +1461,24 @@ async function aiJson(prompt, opts) {
   const b64 = await Promise.all(blobs.map((b) => shrink(b).then(blobB64)));
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const call = async (model) => {
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), 45000);
+    if (opts && opts.signal) { if (opts.signal.aborted) ctl.abort(); else opts.signal.addEventListener('abort', () => ctl.abort()); }
+    try { return await call0(model, ctl.signal); }
+    catch (e) { if (e && e.name === 'AbortError' && !(opts && opts.signal && opts.signal.aborted)) throw new Error('Zeitüberschreitung'); throw e; }
+    finally { clearTimeout(to); }
+  };
+  const call0 = async (model, signal) => {
     if (prov === 'gemini') {
       return fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + encodeURIComponent(key), {
-        method: 'POST', signal: opts && opts.signal,
+        method: 'POST', signal,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: b64.map((d) => ({ inline_data: { mime_type: 'image/jpeg', data: d } })).concat([{ text: prompt }]) }],
           generationConfig: { responseMimeType: 'application/json', temperature: 0 } })
       });
     }
     return fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', signal: opts && opts.signal,
+      method: 'POST', signal,
       headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
       body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 8000,
         messages: [{ role: 'user', content: b64.map((d) => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: d } })).concat([{ type: 'text', text: prompt }]) }] })
