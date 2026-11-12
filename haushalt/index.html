@@ -926,7 +926,8 @@ function myName(){return S.names[S.me]||'Ich';}
 function otherName(){
   var id=null;
   S.entries.concat(S.rec).forEach(function(x){if(!id&&x.by&&x.by!==S.me)id=x.by;});
-  return (id&&S.names[id])||'Partner:in';
+  if(!id){var H=window.HH,all=Object.keys(H.members.names||{});id=all.filter(function(u){return u!==S.me;})[0]||null;}
+  return (id&&S.names[id])||(window.HH.isAdmin?'Franziska':'Georg');
 }
 function scopeHTML(){
   function b(v,l){return '<button data-a="scope" data-v="'+v+'" aria-pressed="'+(S.scope===v)+'">'+esc(l)+'</button>';}
