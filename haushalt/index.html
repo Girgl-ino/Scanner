@@ -1363,11 +1363,12 @@ function parseJson(t) {
 async function aiJson(prompt, opts) {
   const key = HH.ai.key;
   if (!key) throw { code: 'not_granted' };
+  const prov = /^AIza/.test(key) ? 'gemini' : /^sk-ant/.test(key) ? 'claude' : HH.ai.provider;
   const blobs = [].concat((opts && opts.images) || []);
   const b64 = await Promise.all(blobs.map(blobB64));
   let res;
   try {
-    if (HH.ai.provider === 'gemini') {
+    if (prov === 'gemini') {
       res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent', {
         method: 'POST', signal: opts && opts.signal,
         headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
@@ -1390,7 +1391,7 @@ async function aiJson(prompt, opts) {
   if (res.status === 401 || res.status === 403) throw { code: 'not_granted' };
   if (!res.ok) throw { code: 'image_rejected' };
   const j = await res.json();
-  const text = HH.ai.provider === 'gemini'
+  const text = prov === 'gemini'
     ? ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts || []).map((p) => p.text || '').join(''))
     : ((j.content || []).map((p) => p.text || '').join(''));
   return parseJson(text);
