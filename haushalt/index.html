@@ -544,6 +544,7 @@ function banners(){
   else if(!S.canWrite)b+='<p class="notice warn">Du kannst die Daten ansehen, aber nicht ändern. Bitte lass dich als Bearbeiter zum Haushaltsbuch einladen.</p>';
   if(!S.caps.images&&S.canWrite)b+='<p class="notice">Die automatische Beleg-Erkennung ist noch nicht eingerichtet. Tipp auf das Zahnrad oben rechts, um den Schlüssel einzutragen.</p>';
   if(window.HH.isAdmin&&window.HH.requests.length)b+='<button class="notice warn linkish" data-a="settings">'+window.HH.requests.length+' Person wartet auf deine Freigabe</button>';
+  if(pendingList().length)b+='<p class="notice">'+pendingList().length+(pendingList().length>1?' Belege warten':' Beleg wartet')+' auf die automatische Erkennung. Die App versucht es von selbst weiter, solange sie geöffnet ist.</p>';
   if(S.loadErr)b+='<p class="notice warn">Die Daten konnten nicht geladen werden. Bitte öffne die Seite neu.</p>';
   else if(S.slow&&!S.loaded)b+='<p class="notice">Die Daten brauchen länger als gewöhnlich. Prüf bitte deine Verbindung.</p>';
   return b;
@@ -833,6 +834,7 @@ async function readReceipt(blob){
     applyReceipt(r);
   }catch(e){
     if(F!==my||(e&&e.code==='cancelled'))return;
+    if(transient(e)&&my.mode==='new'&&my.photoBlob&&S.caps.db&&!Object.keys(my.touched||{}).length){return queueFromForm(my);}
     my.status='fail';my.msg=(SMSG[e&&e.code]||'Der Beleg konnte nicht gelesen werden. Trag die Daten bitte von Hand ein. Das Foto wird trotzdem gespeichert.')+(e&&e.detail?' (Technisch: '+e.detail+')':'');
   }
   rerenderForm();
@@ -1002,9 +1004,9 @@ async function saveRec(){
 /* ---------- Mehrere Belege auf einmal ---------- */
 var B=null;
 function batchHTML(){
-  var done=B.q.filter(function(x){return x.status==='ok'||x.status==='fail'||x.status==='dup';}).length;
+  var done=B.q.filter(function(x){return x.status==='ok'||x.status==='fail'||x.status==='dup'||x.status==='queued';}).length;
   var rows=B.q.map(function(x){
-    var st=x.status==='wait'?'Wartet':x.status==='read'?'<span class="spin"></span>Wird gelesen …':x.status==='dup'?'Schon vorhanden (gleiches Datum und gleicher Betrag), übersprungen.':x.status==='ok'?'Gespeichert · '+fmt(x.amount)+(x.n?' · '+x.n+' Positionen':'')+(x.warn?'. '+x.warn:''):'Nicht lesbar. Das Foto ist gespeichert, bitte unter Belege ergänzen.';
+    var st=x.status==='wait'?'Wartet':x.status==='read'?'<span class="spin"></span>Wird gelesen …':x.status==='queued'?'Gespeichert. Wird im Hintergrund erneut ausgelesen.':x.status==='dup'?'Schon vorhanden (gleiches Datum und gleicher Betrag), übersprungen.':x.status==='ok'?'Gespeichert · '+fmt(x.amount)+(x.n?' · '+x.n+' Positionen':'')+(x.warn?'. '+x.warn:''):'Nicht lesbar. Das Foto ist gespeichert, bitte unter Belege ergänzen.';
     return '<div class="qrow"><b>'+esc(x.title)+'</b><span class="st'+(x.status==='ok'?' ok':x.status==='fail'?' warn':'')+'">'+st+'</span></div>';
   }).join('');
   return '<div class="handle"></div><div class="fh"><h2>Belege hochladen</h2><button class="ib" data-a="close" aria-label="Schließen">'+icon('x')+'</button></div><p class="sumline">'+done+' von '+B.q.length+' fertig</p><div>'+rows+'</div>'+
@@ -1025,7 +1027,8 @@ async function persistBatch(f,blobs,amount){
     }
   }
   var id=S.caps.db?S.caps.db.collection('entries').doc().id:'l'+Date.now()+Math.random();
-  var e={type:'expense',amount:round2(amount>0?amount:0),date:f.date,title:f.title.trim()||'Beleg (bitte prüfen)',cat:cat,items:items,splits:splits,note:f.note||'',img:img,more:more.length?more:null,fuel:(parseAmt(f.liters)>0&&amount>0)?{liters:round2(parseAmt(f.liters)),ppl:Math.round(amount/parseAmt(f.liters)*1000)/1000,km:null}:null,source:'beleg',createdAt:Date.now(),updatedAt:Date.now()};
+  var e={type:'expense',amount:round2(amount>0?amount:0),date:f.date,title:f.title.trim()||'Beleg (bitte prüfen)',cat:cat,items:items,splits:splits,note:f.note||'',img:img,more:more.length?more:null,fuel:(parseAmt(f.liters)>0&&amount>0)?{liters:round2(parseAmt(f.liters)),ppl:Math.round(amount/parseAmt(f.liters)*1000)/1000,km:null}:null,source:'beleg',by:S.me||null,pending:!!f.pending,createdAt:Date.now(),updatedAt:Date.now()};
+  if(f.pending){e.title='Beleg wird ausgelesen …';}
   if(S.caps.db)await S.caps.db.doc('entries/'+id).set(e);
   else{e.id=id;S.entries=S.entries.concat([e]);}
   return e;
@@ -1041,14 +1044,14 @@ async function startBatch(files){
       var blobs=await toBlobs(x.file);
       var tmp={type:'expense',amount:'',date:todayStr(),title:'',cat:'Sonstiges',items:[],note:'',touched:{}};
       if(S.caps.images){
-        try{var r=await S.caps.sample.json(receiptPrompt(blobs.length),{images:blobs});F=tmp;applyReceipt(r);}catch(e){}
+        try{var r=await S.caps.sample.json(receiptPrompt(blobs.length),{images:blobs});F=tmp;applyReceipt(r);}catch(e){if(transient(e))tmp.pending=true;}
         F=null;
       }
       var amount=parseAmt(tmp.amount);
       if(amount>0&&(seen.some(function(s){return s.d===tmp.date&&Math.abs(s.a-amount)<0.005;})||findDup(tmp.date,amount,null))){x.status='dup';x.title=tmp.title||x.title;x.amount=amount;upd();continue;}
       var e=await persistBatch(tmp,blobs,amount);
       x.title=e.title;x.amount=e.amount;x.n=e.items?e.items.length:0;
-      x.status=amount>0?'ok':'fail';x.warn=tmp.msg||'';lastDate=e.date;if(amount>0){okCount++;seen.push({d:e.date,a:amount});}
+      x.status=amount>0?'ok':(tmp.pending?'queued':'fail');x.warn=tmp.msg||'';lastDate=e.date;if(amount>0){okCount++;seen.push({d:e.date,a:amount});}
     }catch(err){F=null;x.status='fail';}
     upd();
   }
@@ -1107,6 +1110,73 @@ async function doDelete(id){
     if(e)window.HH.deletePhotos([e.img].concat(e.more||[]));
   }catch(x){toast('Löschen hat nicht geklappt. Bitte versuch es noch einmal.');return;}
   closeSheet();toast('Eintrag gelöscht');render();
+}
+
+
+/* ---------- Warteschlange: Belege, die nicht gelesen werden konnten, werden von selbst erneut versucht ---------- */
+var PQ={busy:false,next:{},tries:{}};
+function transient(e){return !!e&&(e.code==='busy'||e.code==='network'||e.code==='rate_limited');}
+function pendingList(){return S.entries.filter(function(x){return x.pending&&mine(x);});}
+async function queueFromForm(my){
+  try{
+    var img=await storeImage(my.photoBlob),more=[];
+    for(var i=0;my.moreBlobs&&i<my.moreBlobs.length;i++)more.push(await storeImage(my.moreBlobs[i]));
+    var id=S.caps.db.collection('entries').doc().id;
+    await S.caps.db.doc('entries/'+id).set({type:'expense',amount:0,date:my.date||todayStr(),title:'Beleg wird ausgelesen …',cat:'Sonstiges',items:null,splits:null,note:'',img:img,more:more.length?more:null,fuel:null,by:S.me||null,source:'beleg',pending:true,createdAt:Date.now(),updatedAt:Date.now()});
+    closeSheet();toast('Beleg gespeichert. Er wird im Hintergrund erneut ausgelesen.');
+    setTimeout(pendingTick,25000);
+  }catch(x){my.msg=(my.msg||'')+' Das Foto konnte nicht zwischengespeichert werden.';rerenderForm();}
+}
+async function pendingTick(){
+  if(PQ.busy||F||!S.caps.db||!S.caps.images||!S.caps.sample||(navigator.onLine===false))return;
+  var e=pendingList().filter(function(x){return !PQ.next[x.id]||PQ.next[x.id]<=Date.now();})[0];
+  if(!e)return;
+  PQ.busy=true;
+  try{
+    var blobs=[],imgs=[e.img].concat(e.more||[]).filter(Boolean);
+    for(var i=0;i<imgs.length;i++){
+      var src=imgSrc(imgs[i]);
+      if(imgs[i].photo&&src===BLANK)src=await window.HH.getPhoto(imgs[i].photo);
+      if(!src)throw {code:'image_rejected'};
+      blobs.push(await (await fetch(src)).blob());
+    }
+    var tmp={type:'expense',amount:'',date:e.date||todayStr(),title:'',cat:'Sonstiges',items:[],note:'',touched:{}};
+    var r=await S.caps.sample.json(receiptPrompt(blobs.length),{images:blobs});
+    var keep=F;F=tmp;try{applyReceipt(r);}finally{F=keep;}
+    var amount=parseAmt(tmp.amount);
+    var d={};Object.keys(e).forEach(function(k){if(k!=='id')d[k]=e[k];});
+    d.pending=false;d.updatedAt=Date.now();
+    if(amount>0){
+      var items=null,splits=null,cat=tmp.cat||'Sonstiges';
+      if(tmp.items.length){
+        var it=tmp.items.map(function(i){return {name:(i.name||'').trim()||'Artikel',cat:i.cat,sub:i.sub||'',amount:round2(parseAmt(i.amt)),qty:i.qty||1};}).filter(function(i){return isFinite(i.amount)&&i.amount!==0;});
+        if(it.length){var sum=round2(it.reduce(function(a,i){return a+i.amount;},0)),diff=round2(amount-sum);if(Math.abs(diff)>=0.01)it.push({name:'Differenz zum Kassenbetrag',cat:'Sonstiges',amount:diff,qty:1});items=it;splits=groupItems(it);cat=splits[0].cat;}
+      }
+      d.amount=round2(amount);d.date=tmp.date;d.title=(tmp.title||'').trim()||'Beleg (bitte prüfen)';d.cat=cat;d.items=items;d.splits=splits;
+      d.note=tmp.msg||'';
+      var lt=parseAmt(tmp.liters);d.fuel=lt>0?{liters:round2(lt),ppl:Math.round(amount/lt*1000)/1000,km:null}:null;
+      if(findDup(d.date,d.amount,e.id))d.note=(d.note?d.note+' ':'')+'Möglicherweise doppelt: gleicher Tag und Betrag wie ein anderer Beleg.';
+    }else{d.title='Beleg (bitte prüfen)';d.note='Nicht lesbar. Bitte von Hand ergänzen.';}
+    await S.caps.db.doc('entries/'+e.id).set(d);
+    delete PQ.next[e.id];delete PQ.tries[e.id];
+    toast(amount>0?'Beleg im Hintergrund gelesen: '+d.title:'Ein Beleg war nicht lesbar');
+  }catch(err){
+    var n=(PQ.tries[e.id]=(PQ.tries[e.id]||0)+1);
+    if(transient(err)||(err&&err.code==='not_granted')){PQ.next[e.id]=Date.now()+Math.min(60000*Math.pow(2,Math.min(n-1,4)),900000);}
+    else if(n>=3){
+      var d2={};Object.keys(e).forEach(function(k){if(k!=='id')d2[k]=e[k];});
+      d2.pending=false;d2.title='Beleg (bitte prüfen)';d2.note='Automatisches Auslesen hat nicht geklappt. Bitte von Hand ergänzen.';d2.updatedAt=Date.now();
+      try{await S.caps.db.doc('entries/'+e.id).set(d2);}catch(x){}
+    }else PQ.next[e.id]=Date.now()+60000;
+  }
+  PQ.busy=false;
+  if(window.__pqSoon)setTimeout(pendingTick,2000);
+}
+function startQueue(){
+  setInterval(pendingTick,20000);
+  window.addEventListener('online',pendingTick);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)pendingTick();});
+  setTimeout(pendingTick,3000);
 }
 
 
@@ -1274,6 +1344,7 @@ async function init(){
     snap.docs.forEach(function(d){if(d.id==='main'){var v=d.data();S.start=v&&isFinite(v.start)?v.start:0;}});
     if(S.loaded)render();
   },function(){});
+  startQueue();
   setTimeout(function(){if(!S.loaded){S.slow=true;render();}},10000);
   db.collection('entries').orderBy('date','desc').limit(1000).onSnapshot(function(snap){
     S.entries=snap.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;return o;}).filter(function(e){return isFinite(e.amount)&&e.date;});
