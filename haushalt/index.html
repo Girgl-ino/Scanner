@@ -544,7 +544,7 @@ function banners(){
   else if(!S.canWrite)b+='<p class="notice warn">Du kannst die Daten ansehen, aber nicht ändern. Bitte lass dich als Bearbeiter zum Haushaltsbuch einladen.</p>';
   if(!S.caps.images&&S.canWrite)b+='<p class="notice">Die automatische Beleg-Erkennung ist noch nicht eingerichtet. Tipp auf das Zahnrad oben rechts, um den Schlüssel einzutragen.</p>';
   if(window.HH.isAdmin&&window.HH.requests.length)b+='<button class="notice warn linkish" data-a="settings">'+window.HH.requests.length+' Person wartet auf deine Freigabe</button>';
-  if(pendingList().length)b+='<p class="notice">'+pendingList().length+(pendingList().length>1?' Belege warten':' Beleg wartet')+' auf die automatische Erkennung. Die App versucht es von selbst weiter, solange sie geöffnet ist.</p>';
+  if(pendingList().length)b+='<p class="notice">'+pendingList().length+(pendingList().length>1?' Belege warten':' Beleg wartet')+' auf die automatische Erkennung. '+(PQ.busy?'Wird gerade gelesen …':'Die App versucht es von selbst weiter, solange sie geöffnet ist.')+(Object.keys(PQ.err).length?' Letzter Fehler: '+esc(PQ.err[Object.keys(PQ.err).pop()])+'.':'')+' <button class="btn" data-a="pqnow">Jetzt erneut versuchen</button></p>';
   if(S.loadErr)b+='<p class="notice warn">Die Daten konnten nicht geladen werden. Bitte öffne die Seite neu.</p>';
   else if(S.slow&&!S.loaded)b+='<p class="notice">Die Daten brauchen länger als gewöhnlich. Prüf bitte deine Verbindung.</p>';
   return b;
@@ -1114,7 +1114,7 @@ async function doDelete(id){
 
 
 /* ---------- Warteschlange: Belege, die nicht gelesen werden konnten, werden von selbst erneut versucht ---------- */
-var PQ={busy:false,next:{},tries:{}};
+var PQ={busy:false,next:{},tries:{},err:{}};
 function transient(e){return !!e&&(e.code==='busy'||e.code==='network'||e.code==='rate_limited');}
 function pendingList(){return S.entries.filter(function(x){return x.pending&&mine(x);});}
 async function queueFromForm(my){
@@ -1124,14 +1124,14 @@ async function queueFromForm(my){
     var id=S.caps.db.collection('entries').doc().id;
     await S.caps.db.doc('entries/'+id).set({type:'expense',amount:0,date:my.date||todayStr(),title:'Beleg wird ausgelesen …',cat:'Sonstiges',items:null,splits:null,note:'',img:img,more:more.length?more:null,fuel:null,by:S.me||null,source:'beleg',pending:true,createdAt:Date.now(),updatedAt:Date.now()});
     closeSheet();toast('Beleg gespeichert. Er wird im Hintergrund erneut ausgelesen.');
-    setTimeout(pendingTick,25000);
+    setTimeout(pendingTick,3000);
   }catch(x){my.msg=(my.msg||'')+' Das Foto konnte nicht zwischengespeichert werden.';rerenderForm();}
 }
 async function pendingTick(){
   if(PQ.busy||F||!S.caps.db||!S.caps.images||!S.caps.sample||(navigator.onLine===false))return;
   var e=pendingList().filter(function(x){return !PQ.next[x.id]||PQ.next[x.id]<=Date.now();})[0];
   if(!e)return;
-  PQ.busy=true;
+  PQ.busy=true;PQ.cur=e.id;if(S.tab==='home'||true)try{render();}catch(x){}
   try{
     var blobs=[],imgs=[e.img].concat(e.more||[]).filter(Boolean);
     for(var i=0;i<imgs.length;i++){
@@ -1158,26 +1158,29 @@ async function pendingTick(){
       if(findDup(d.date,d.amount,e.id))d.note=(d.note?d.note+' ':'')+'Möglicherweise doppelt: gleicher Tag und Betrag wie ein anderer Beleg.';
     }else{d.title='Beleg (bitte prüfen)';d.note='Nicht lesbar. Bitte von Hand ergänzen.';}
     await S.caps.db.doc('entries/'+e.id).set(d);
-    delete PQ.next[e.id];delete PQ.tries[e.id];
+    delete PQ.next[e.id];delete PQ.tries[e.id];delete PQ.err[e.id];
     toast(amount>0?'Beleg im Hintergrund gelesen: '+d.title:'Ein Beleg war nicht lesbar');
   }catch(err){
     var n=(PQ.tries[e.id]=(PQ.tries[e.id]||0)+1);
-    if(transient(err)||(err&&err.code==='not_granted')){PQ.next[e.id]=Date.now()+Math.min(60000*Math.pow(2,Math.min(n-1,4)),900000);}
+    PQ.err[e.id]=((err&&err.code)||'fehler')+((err&&err.detail)?' '+String(err.detail).slice(0,80):'');
+    if(transient(err)||(err&&err.code==='not_granted')){PQ.next[e.id]=Date.now()+Math.min(10000*Math.pow(2,Math.min(n-1,5)),300000);}
     else if(n>=3){
       var d2={};Object.keys(e).forEach(function(k){if(k!=='id')d2[k]=e[k];});
       d2.pending=false;d2.title='Beleg (bitte prüfen)';d2.note='Automatisches Auslesen hat nicht geklappt. Bitte von Hand ergänzen.';d2.updatedAt=Date.now();
       try{await S.caps.db.doc('entries/'+e.id).set(d2);}catch(x){}
     }else PQ.next[e.id]=Date.now()+60000;
   }
-  PQ.busy=false;
-  if(window.__pqSoon)setTimeout(pendingTick,2000);
+  PQ.busy=false;PQ.cur=null;
+  try{render();}catch(x){}
+  setTimeout(pendingTick,1500);
 }
 function startQueue(){
-  setInterval(pendingTick,20000);
-  window.addEventListener('online',pendingTick);
-  document.addEventListener('visibilitychange',function(){if(!document.hidden)pendingTick();});
-  setTimeout(pendingTick,3000);
+  setInterval(pendingTick,10000);
+  window.addEventListener('online',pqNow);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)pqNow();});
+  setTimeout(pendingTick,1500);
 }
+function pqNow(){PQ.next={};pendingTick();}
 
 
 /* ---------- Einstellungen (nur Standalone) ---------- */
@@ -1203,6 +1206,7 @@ function openSettings(){
 
 /* ---------- Aktionen ---------- */
 var ACT={
+  pqnow:function(){toast('Versuche es erneut …');pqNow();},
   settings:function(){openSettings();},
   approve:function(v){var r=window.HH.requests.find(function(x){return x.uid===v;});window.HH.approve(v,r&&r.name).then(function(){toast('Freigegeben');}).catch(function(){toast('Das hat nicht geklappt.');});},
   rmember:function(v){window.HH.removeMember(v).then(function(){toast('Entfernt');}).catch(function(){toast('Das hat nicht geklappt.');});},
