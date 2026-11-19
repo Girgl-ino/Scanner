@@ -334,7 +334,7 @@
   function homeHtml() {
     var u = DT.nextUnit(st), today = C.today(), h = '', ok = openSheetKey();
     var dn = doneToday(), name = C.name();
-    h += '<div class="panel pad dt-hero"><div><h2>Deutsch üben' + (name ? ', ' + E(name) : '') + '</h2><p class="dt-sub">Jeden Tag etwa 20 Minuten. Du schreibst auf Papier.</p></div><div class="dt-streak" title="Tage in Folge"><b>' + streak() + '</b><span>🔥 Tage</span></div></div>';
+    h += '<div class="panel pad dt-hero"><div><h2>Deutsch üben' + (name ? ', ' + E(name) : '') + '</h2><p class="dt-sub">Jeden Tag etwa 20 Minuten. Du schreibst auf Papier. <span class="pill">Stufe ' + DT.levelFor(st) + '</span></p></div><div class="dt-streak" title="Tage in Folge"><b>' + streak() + '</b><span>🔥 Tage</span></div></div>';
     if (ok) {
       var orec = st.days[ok];
       h += '<div class="panel pad dt-today"><div class="dt-meta">Dein Blatt wartet</div><h2>' + (orec.rep ? 'Wiederholungsblatt' : 'Heutige Aufgaben') + '</h2><p class="dt-sub">' + sheetList(ok).length + ' Aufgaben · schreibe die Lösungen auf Papier. Danach fotografiert Papa dein Blatt.</p><button class="btn primary submit" type="button" data-a="sheetview">Aufgaben anzeigen</button></div>';
@@ -421,6 +421,7 @@
     h += '<div class="panel pad"><h3>Plan der Wochen</h3>' + DT.WEEKS.map(function (w) { return '<div class="dt-pl"><b>Woche ' + w.n + (w.ready ? '' : ' (folgt)') + ':</b> ' + E(w.rs) + (w.gr ? ' · ' + E(w.gr) : '') + '</div>'; }).join('') + '<p class="dt-sub">Lernbereiche nach LehrplanPLUS Deutsch Realschule 5 (Richtig schreiben, Sprache untersuchen). Bitte die Inhalte mit dem Unterricht abgleichen.</p></div>';
     /* Probelauf + Einstellungen */
     h += '<div class="panel pad"><h3>Probelauf</h3><p class="dt-sub">Probieren Sie eine Einheit selbst aus. Dabei wird nichts gespeichert.</p><div class="dt-try">' + DT.units().map(function (u) { return '<button class="btn small" type="button" data-a="probe" data-w="' + u.w + '" data-d="' + u.d + '">W' + DT.WEEKS[u.w].n + ' T' + (u.d + 1) + '</button>'; }).join('') + '</div></div>';
+    h += '<div class="panel pad"><h3>Schwierigkeit</h3><p class="dt-sub">Aktuell Stufe ' + DT.levelFor(st) + ' (' + ((st.cfg && +st.cfg.lv) ? 'von Ihnen festgelegt' : 'automatisch') + '). Die Stufe steigt nach zwei sehr guten Tagen in Folge (je mindestens 18 von 20 Punkten) und sinkt nach einem schwachen Tag.</p><div class="dt-try">' + [[0, 'Automatisch'], [1, 'Stufe 1 fest'], [2, 'Stufe 2 fest']].map(function (o) { return '<button type="button" class="btn small' + (((st.cfg && +st.cfg.lv) || 0) === o[0] ? ' primary' : '') + '" data-a="setlv" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div></div>';
     h += '<div class="panel pad"><h3>Wiederholungs-Abstände</h3><p class="dt-sub">In Tagen, von „gerade gelernt“ bis „sicher“. Bei Fehlern beginnt es wieder vorne. Standard: 1, 3, 7, 14, 30.</p><div class="dt-iv"><input class="inp" id="dtiv" value="' + E(iv().join(', ')) + '" inputmode="numeric" aria-label="Abstände in Tagen"><button class="btn" type="button" data-a="saveiv">Speichern</button></div>' +
       '<h3 style="margin-top:16px">Daten löschen</h3><p class="dt-sub">Löscht den gesamten Lernstand von ' + E(C.name() || 'Anwender') + ' im Deutschtraining. Das kann nicht rückgängig gemacht werden.</p><button class="btn danger' + (armedDel ? ' armed' : '') + '" type="button" data-a="wipe">' + (armedDel ? 'Wirklich alles löschen? Nochmal tippen' : 'Lernstand löschen') + '</button></div>';
     return h;
@@ -444,7 +445,7 @@
       list = DT.buildReview(st, today); if (!list.length) { C.toast('Gerade gibt es nichts zu wiederholen.'); return; }
       var n = 1; while (st.days[today + '~r' + n]) n++; key = today + '~r' + n; unitKey = 'rep';
     }
-    var rec = { k: unitKey, paper: 1, part: 1, l: list.map(function (x) { return [x.id, x.ph, x.rep ? 1 : 0]; }), r: [], p: 0, pp: [0, 0, 0, 0], dur: 0, rep: kind === 'unit' ? 0 : 1, t: Date.now() };
+    var rec = { k: unitKey, paper: 1, part: 1, l: list.map(function (x) { return [x.id, x.ph, x.rep ? 1 : 0]; }), r: [], p: 0, pp: [0, 0, 0, 0], dur: 0, rep: kind === 'unit' ? 0 : 1, lv: DT.levelFor(st), t: Date.now() };
     var p = { days: {} }; p.days[key] = rec; save(p);
     cor = { f: {}, min: '', code: '' }; showSheet = true; render(); window.scrollTo(0, 0);
   }
@@ -524,7 +525,7 @@
     S = { mode: rec.rep ? 'review' : 'unit', key: rec.k === 'rep' ? '' : rec.k, date: key.slice(0, 10), list: list, i: list.length, res: [], applied: 0, tdone: 0, probe: false };
     list.forEach(function (u) { var f = cor.f[u.id], ex = EX(u.id); S.res.push({ id: u.id, ph: u.ph, f: f, h: 0, rep: u.rep ? 1 : 0, sec: Math.round(min * 60 / list.length), wd: DT.wordsOfTask(ex, f) }); });
     applyPending();
-    var r2 = dayRecord(true); r2.paper = 1;
+    var r2 = dayRecord(true); r2.paper = 1; r2.lv = rec.lv || 1;
     var p = { days: {}, srs: st.srs, words: st.words, errors: st.errors };
     p.days[key] = r2;
     if (!st.start) p.start = S.date;
@@ -614,6 +615,7 @@
     if (a === 'leave') { leave(); return; }
     if (a === 'probe') { startUnit({ w: +b.dataset.w, d: +b.dataset.d, key: 'w' + DT.WEEKS[+b.dataset.w].n + 'd' + (+b.dataset.d + 1) }, true); return; }
     if (a === 'rv') { var p2 = { review: {} }; p2.review[b.dataset.k] = +b.dataset.v; save(p2); render(); return; }
+    if (a === 'setlv') { save({ cfg: { lv: +b.dataset.v } }); render(); C.toast('Gespeichert.'); return; }
     if (a === 'saveiv') {
       var v = ($('#dtiv').value || '').split(/[,;\s]+/).filter(Boolean).map(Number);
       if (v.length !== 5 || v.some(function (x) { return !(x >= 1 && x <= 120) || x % 1; }) || v.some(function (x, i) { return i && x < v[i - 1]; })) { C.toast('Bitte fünf aufsteigende Zahlen (Tage) eingeben, zum Beispiel 1, 3, 7, 14, 30.'); return; }

@@ -306,6 +306,55 @@
   G('y11', 'vb.praes', 'Setze die richtige Form von „singen“ ein. Wir ___ ein Lied. Ihr ___ laut.', [['singen'], ['singt']], 'wir singen, ihr singt.', { pool: 1 });
   A('y12', 'vb.pers', 'Welche Endung hat das Verb? Ordne zu.', END, [['ich singe', 0], ['du singst', 1], ['er singt', 2], ['ich renne', 0], ['du rennst', 1], ['sie rennt', 2]], 'ich → -e, du → -st, er/sie/es → -t.', { pool: 1 });
 
+
+  /* ================= STUFE 2: anspruchsvollere Aufgaben (diff 2), kommen erst nach sehr guten Tagen ================= */
+  var H2 = { pool: 1, diff: 2 };
+  var ZE3 = ['Punkt (.)', 'Fragezeichen (?)', 'Ausrufezeichen (!)'];
+  F('h01', 'gk.nomen', 'Finde alle Fehler in der Groß- und Kleinschreibung und verbessere sie.', 'Im Winter spielen die kinder im schnee. Der hund springt über einen zaun und die katze schaut vom Fenster zu.', 'Im Winter spielen die Kinder im Schnee. Der Hund springt über einen Zaun und die Katze schaut vom Fenster zu.', 'Kinder, Schnee, Hund, Zaun und Katze sind Nomen. Man kann „der“, „die“ oder „das“ davor setzen.', H2);
+  M('h02', 'gk.nomen', 'Welche Wörter schreibt man in diesem Satz groß? „gestern kaufte mutter frisches brot beim bäcker.“', ['gestern', 'mutter', 'frisches', 'brot', 'bäcker', 'kaufte'], [0, 1, 3, 4], 'Gestern steht am Satzanfang. Mutter, Brot und Bäcker sind Nomen. Frisches und kaufte schreibt man klein.', H2);
+  A('h03', 'gk.endung', 'Nomen (groß) oder kein Nomen (klein)? Achte auf die Endung.', ['Nomen (groß)', 'kein Nomen (klein)'], [['Freundschaft', 0], ['freundlich', 1], ['Wohnung', 0], ['wohnlich', 1], ['Gesundheit', 0], ['gesund', 1], ['Ergebnis', 0], ['ergeben', 1]], 'Die Endungen -schaft, -ung, -heit und -nis zeigen Nomen. Freundlich, wohnlich, gesund und ergeben schreibt man klein.', H2);
+  G('h04', 'gk.endung', 'Bilde aus dem Wort in Klammern ein Nomen und schreibe es groß. Unsere ___ (wohnen) ist klein. Die ___ (frei) ist wichtig.', [['Wohnung'], ['Freiheit']], 'Aus wohnen wird Wohnung (-ung). Aus frei wird Freiheit (-heit). Beide sind Nomen.', H2);
+  F('h05', 'gk.satz', 'Finde alle Fehler (Satzanfang, Namen, Nomen) und verbessere sie.', 'am samstag besuchen anna und ben ihre oma in münchen. sie bringen blumen mit.', 'Am Samstag besuchen Anna und Ben ihre Oma in München. Sie bringen Blumen mit.', 'Satzanfänge, Namen, Orte und Nomen schreibt man groß.', H2);
+  T('h06', 'gk.satz', 'Schreibe den Satz richtig auf: mein bruder lukas wohnt in berlin und besucht uns im sommer.', ['Mein Bruder Lukas wohnt in Berlin und besucht uns im Sommer.'], 'Mein (Satzanfang), Bruder, Lukas, Berlin und Sommer schreibt man groß.', H2);
+  G('h07', 'gk.verbnomen', 'Setze das Verb als Nomen ein und schreibe es groß. Beim ___ (lesen) vergesse ich die Zeit. Das ___ (schwimmen) macht mir Spaß.', [['Lesen'], ['Schwimmen']], 'Nach „beim“ und „das“ wird das Verb zum Nomen. Dann schreibt man es groß.', H2);
+  S('h08', 'gk.verbnomen', 'In welchem Satz ist alles richtig geschrieben?', ['Wir wollen heute Laufen gehen.', 'Beim Laufen werde ich schnell müde.', 'Das laufen ist anstrengend.'], 1, 'Beim Laufen und Das Laufen sind Nomen. Bei „laufen gehen“ bleibt laufen ein Verb und wird kleingeschrieben.', H2);
+  F('h09', 'gk.klein', 'Finde die Fehler und verbessere sie.', 'Die kinder Lachen laut und Rennen über die Wiese. Das Gras ist Grün.', 'Die Kinder lachen laut und rennen über die Wiese. Das Gras ist grün.', 'Kinder ist ein Nomen. Lachen, rennen und grün sind Verben oder ein Adjektiv und werden kleingeschrieben.', H2);
+  S('h10', 'gk.klein', 'Welcher Satz ist richtig geschrieben?', ['Das Essen schmeckt Gut.', 'Wir essen heute Pizza.', 'wir Essen heute Pizza.'], 1, 'Wir essen (Verb, klein) heute Pizza (Nomen, groß).', H2);
+  M('h11', 'wa.nomen', 'Welche Wörter sind Nomen? „Am Morgen trinkt Opa Kaffee und liest die Zeitung.“', ['Morgen', 'trinkt', 'Opa', 'Kaffee', 'liest', 'Zeitung'], [0, 2, 3, 5], 'Morgen, Opa, Kaffee und Zeitung sind Nomen. Trinkt und liest sind Verben.', H2);
+  S('h12', 'wa.nomen', 'In welchem Satz ist „Spielen“ ein Nomen?', ['Wir spielen draußen.', 'Das Spielen macht Spaß.', 'Ich will spielen.', 'Sie spielen Fußball.'], 1, 'Vor „Spielen“ steht der Artikel „das“. Darum ist es hier ein Nomen.', H2);
+  M('h13', 'wa.verb', 'Welche Wörter sind Verben? „Am Abend lesen wir, spielen und singen zusammen.“', ['Abend', 'lesen', 'spielen', 'singen', 'zusammen'], [1, 2, 3], 'Lesen, spielen und singen sagen, was man tut. Das sind Verben.', H2);
+  M('h14', 'wa.verb', 'Welche Wörter sind Verben? „Der Hund rennt durch den Garten und bellt laut.“', ['rennt', 'Garten', 'bellt', 'laut'], [0, 2], 'Rennt und bellt sind Verben. Garten ist ein Nomen, laut ein Adjektiv.', H2);
+  M('h15', 'wa.adj', 'Welche Wörter sind Adjektive? „Der kleine Junge trägt eine rote Mütze und ein warmes Tuch.“', ['kleine', 'Junge', 'rote', 'Mütze', 'warmes', 'Tuch'], [0, 2, 4], 'Kleine, rote und warmes sagen, wie etwas ist. Das sind Adjektive.', H2);
+  G('h16', 'wa.adj', 'Setze das Gegenteil als Adjektiv ein. Der Turm ist hoch, der Zaun ist ___. Der Tee ist heiß, das Eis ist ___.', [['niedrig', 'klein'], ['kalt']], 'Das Gegenteil von hoch ist niedrig, von heiß ist kalt.', H2);
+  A('h17', 'wa.artikel', 'Welcher Artikel gehört zum Nomen? Ordne zu.', ART, [['Mädchen', 2], ['Sonne', 1], ['Löffel', 0], ['Auto', 2], ['Banane', 1], ['Fahrrad', 2]], 'Der Löffel, die Sonne, die Banane, das Mädchen, das Auto, das Fahrrad.', H2);
+  G('h18', 'wa.artikel', 'Setze „ein“ oder „eine“ ein. Das ist ___ Apfel und das ist ___ Birne.', [['ein'], ['eine']], 'Der Apfel: ein Apfel. Die Birne: eine Birne.', H2);
+  G('h19', 'wa.pronomen', 'Ersetze das Nomen durch ein Pronomen. Anna lacht. ___ lacht. Der Hund bellt. ___ bellt. Das Kind spielt. ___ spielt.', [['Sie'], ['Er'], ['Es']], 'Anna ist sie, der Hund ist er, das Kind ist es.', H2);
+  S('h20', 'wa.pronomen', 'Welches Pronomen ersetzt „Max und Anna“?', ['er', 'sie (Mehrzahl)', 'es', 'wir'], 1, 'Mehrere Personen ersetzt man durch „sie“: Sie spielen.', H2);
+  A('h21', 'wa.satz', 'Bestimme die Wortart im Satz „Die kleine Katze trinkt frische Milch.“', WA4, [['Die', 0], ['kleine', 3], ['Katze', 1], ['trinkt', 2], ['frische', 3], ['Milch', 1]], 'Die ist ein Artikel, Katze und Milch sind Nomen, trinkt ist ein Verb, kleine und frische sind Adjektive.', H2);
+  A('h22', 'wa.mix', 'Welche Wortart ist das Wort? Ordne zu.', WA3, [['Freude', 0], ['freuen', 1], ['fröhlich', 2], ['Läufer', 0], ['laufen', 1], ['schnell', 2], ['lachen', 1], ['Lachen (das Lachen)', 0]], 'Freude, Läufer und das Lachen sind Nomen. Freuen, laufen und lachen sind Verben. Fröhlich und schnell sind Adjektive.', H2);
+  S('h23', 'wa.mix', 'Welche Reihe enthält nur Nomen?', ['Hund, Katze, Haus', 'Hund, laufen, Haus', 'schön, Katze, Haus', 'Hund, Katze, laut'], 0, 'Hund, Katze und Haus sind alle Nomen. In den anderen Reihen steht ein Verb oder ein Adjektiv.', H2);
+  T('h24', 'sb.verb2', 'Beginne den Satz mit „Heute Nachmittag“: Wir gehen ins Schwimmbad.', ['Heute Nachmittag gehen wir ins Schwimmbad.'], 'Das Verb bleibt an zweiter Stelle. Heute Nachmittag ist das erste Satzglied.', H2);
+  O('h25', 'sb.verb2', 'Bilde einen Satz. Tippe die Satzteile in der richtigen Reihenfolge an.', ['besucht', 'Am Wochenende', 'meine Tante', 'uns'], [[1, 0, 2, 3], [1, 0, 3, 2]], 'Das Verb besucht steht an zweiter Stelle.', H2);
+  A('h26', 'sb.zeichen', 'Welches Satzzeichen steht am Ende? Ordne zu.', ZE3, [['Wo ist mein Ball', 1], ['Hör sofort auf', 2], ['Ich mag Pizza', 0], ['Kommst du mit', 1], ['Pass auf', 2], ['Es regnet heute', 0]], 'Fragen enden mit ?, Aufforderungen mit !, Aussagen mit einem Punkt.', H2);
+  T('h27', 'sb.zeichen', 'Schreibe den Satz mit Satzzeichen auf: wann kommt der bus', ['Wann kommt der Bus?'], 'Eine Frage: Fragezeichen am Ende. Wann am Anfang und Bus als Nomen groß.', H2);
+  S('h28', 'sb.satzglied', 'Was ist das Subjekt? „Am Montag schreibt die ganze Klasse eine Arbeit.“', ['Am Montag', 'schreibt', 'die ganze Klasse', 'eine Arbeit'], 2, 'Wer schreibt? Die ganze Klasse. Das ist das Subjekt.', H2);
+  M('h29', 'sb.satzglied', 'Welche Wörter sind Prädikate? „Anna liest ein Buch und Ben spielt Fußball.“', ['liest', 'Buch', 'spielt', 'Fußball'], [0, 2], 'Die Prädikate sind die Verben: liest und spielt.', H2);
+  F('h30', 'ds.kurz', 'Finde alle Fehler und verbessere sie.', 'Im Somer komt meine Tante zu Besuch. Wir schwimen im See und essen Eis mit dem Löfel.', 'Im Sommer kommt meine Tante zu Besuch. Wir schwimmen im See und essen Eis mit dem Löffel.', 'Sommer, kommt, schwimmen und Löffel haben einen kurzen Vokal und einen Doppelkonsonanten.', H2);
+  G('h31', 'ds.kurz', 'Ergänze das Wort richtig. Das Wasser ist ___ (nas). Ich ___ (kene) den Jungen.', [['nass'], ['kenne']], 'Nass und kenne haben einen kurzen Vokal: ss und nn.', H2);
+  A('h32', 'ds.kurz', 'Doppelkonsonant oder nicht? Ordne zu.', ['mit Doppelkonsonant', 'ohne Doppelkonsonant'], [['Himmel', 0], ['Hase', 1], ['Wetter', 0], ['Nase', 1], ['Bett', 0], ['Hose', 1]], 'Nach einem kurzen Vokal steht ein Doppelkonsonant: Himmel, Wetter, Bett. Hase, Nase und Hose haben einen langen Vokal.', H2);
+  F('h33', 'ds.ck', 'Finde alle Fehler und verbessere sie.', 'Der Bäker schmückt die Torte mit Zuker. Die Katze sitzt auf der Deke und schaut zu.', 'Der Bäcker schmückt die Torte mit Zucker. Die Katze sitzt auf der Decke und schaut zu.', 'Bäcker, Zucker und Decke werden mit ck geschrieben. Katze mit tz.', H2);
+  G('h34', 'ds.ck', 'Schreibe die Wörter richtig auf. Der ___ (hoker) steht auf dem ___ (plaz).', [['Hocker'], ['Platz']], 'Hocker (ck) und Platz (tz): kurzer Vokal.', H2);
+  F('h35', 'ds.lang', 'Finde alle Fehler und verbessere sie.', 'Im Winter liegt viel Schne. Die Kinder spilen auf der Wise und füttern ein Tir.', 'Im Winter liegt viel Schnee. Die Kinder spielen auf der Wiese und füttern ein Tier.', 'Schnee (ee), spielen, Wiese und Tier (ie): lange Vokale.', H2);
+  A('h36', 'ds.lang', 'Wie wird der lange Vokal geschrieben? Ordne zu.', ['Doppelvokal', 'ie', 'Dehnungs-h'], [['Meer', 0], ['Fliege', 1], ['Zahn', 2], ['Moos', 0], ['Spiel', 1], ['Bohne', 2]], 'Meer und Moos: Doppelvokal. Fliege und Spiel: ie. Zahn und Bohne: Dehnungs-h.', H2);
+  G('h37', 'ds.stamm', 'Verlängere die Wörter und schreibe sie richtig auf. Der ___ (diep) ist weggelaufen. Der ___ (tak) ist schön. Der ___ (walt) ist dunkel.', [['Dieb'], ['Tag'], ['Wald']], 'Dieb (Diebe), Tag (Tage), Wald (Wälder): Verlängern zeigt den Endbuchstaben.', H2);
+  S('h38', 'ds.stamm', 'Verlängere das Wort (die Zwerge). Welche Schreibweise ist richtig?', ['Zwerk', 'Zwerg', 'Zwärg'], 1, 'Bei Zwerge hörst du ein g. Darum schreibt man Zwerg.', H2);
+  G('h39', 'vb.inf', 'Schreibe die Grundform (Infinitiv) auf. er liest → ___ ; sie fährt → ___ ; du gibst → ___', [['lesen'], ['fahren'], ['geben']], 'Die Grundform endet auf -en: lesen, fahren, geben.', H2);
+  S('h40', 'vb.inf', 'Welche Grundform gehört zu „er fängt“?', ['fangen', 'fängen', 'fänge', 'fang'], 0, 'Die Grundform ist fangen.', H2);
+  G('h41', 'vb.pers', 'Setze „lesen“ in der richtigen Form ein. Ich ___ ein Buch. Du ___ eine Zeitung. Anna ___ einen Comic.', [['lese'], ['liest'], ['liest']], 'ich lese, du liest, sie liest. Bei lesen ändert sich der Vokal.', H2);
+  G('h42', 'vb.pers', 'Setze „fahren“ in der richtigen Form ein. Ich ___ Rad. Du ___ mit dem Bus. Er ___ mit dem Auto.', [['fahre'], ['fährst'], ['fährt']], 'ich fahre, du fährst, er fährt. Bei fahren wird das a zu ä.', H2);
+  G('h43', 'vb.praes', 'Setze „arbeiten“ in der richtigen Form ein. Ich ___ viel. Du ___ gern. Er ___ im Garten. Ihr ___ zusammen.', [['arbeite'], ['arbeitest'], ['arbeitet'], ['arbeitet']], 'ich arbeite, du arbeitest, er arbeitet, ihr arbeitet. Nach t kommt ein e vor st und t.', H2);
+  F('h44', 'vb.praes', 'Finde die Fehler und verbessere sie.', 'Wir lacht laut und du spielt Fußball. Die Kinder singt ein Lied.', 'Wir lachen laut und du spielst Fußball. Die Kinder singen ein Lied.', 'wir lachen, du spielst, die Kinder singen: Die Endung passt zur Person.', H2);
+
   /* ---------- Lernwortschatz Woche 1 ---------- */
   DT.WORDS = [
     ['Hund', 'Nomen', 'der Hund: Artikelprobe'], ['Sonne', 'Nomen', 'die Sonne: Artikelprobe'], ['Wohnung', 'Nomen', 'Endung -ung'],
@@ -553,14 +602,38 @@
     return seen;
   };
   /* Variante zum Skill, bevorzugt noch nicht gesehen, nicht in `not` */
-  DT.variantFor = function (skill, st, not) {
+  DT.variantFor = function (skill, st, not, lv) {
+    lv = lv || 1;
     var seen = DT.seenIds(st), best = null, bs = 1e9;
     Object.keys(EX).forEach(function (id) {
-      var e = EX[id]; if (e.skill !== skill || not.indexOf(id) >= 0) return;
-      var sc = (seen[id] || 0) * 10 + (e.pool ? 0 : 1) + Math.random() * 0.5;
+      var e = EX[id]; if (e.skill !== skill || not.indexOf(id) >= 0 || (e.diff || 1) > lv) return;
+      var sc = (seen[id] || 0) * 10 + (e.pool ? 0 : 1) + ((e.diff || 1) < lv ? 4 : 0) + Math.random() * 0.5;
       if (sc < bs) { bs = sc; best = id; }
     });
     return best;
+  };
+  /* Stufe: 1 Grundniveau, 2 anspruchsvoller. Steigt nach zwei sehr guten Tagen in Folge (je mindestens 18 von 20), sinkt nach einem schwachen Tag (höchstens 10). Der Vater kann sie festlegen (cfg.lv). */
+  DT.MAXLV = 2;
+  DT.levelFor = function (st) {
+    var f = st && st.cfg && +st.cfg.lv; if (f >= 1 && f <= DT.MAXLV) return f;
+    var days = Object.keys((st && st.days) || {}).filter(function (k) { var d = st.days[k]; return k.indexOf('~') < 0 && d.paper && !d.part && !d.rep; }).sort();
+    if (!days.length) return 1;
+    var d2 = st.days[days[days.length - 1]], cur = d2.lv || 1;
+    if (d2.p <= 10) return Math.max(1, cur - 1);
+    if (days.length >= 2) { var d1 = st.days[days[days.length - 2]]; if ((d1.lv || 1) === cur && d1.p >= 18 && d2.p >= 18) return Math.min(DT.MAXLV, cur + 1); }
+    return cur;
+  };
+  /* ersetzt in den Phasen 2 bis 4 jede zweite Aufgabe durch eine Aufgabe der Stufe */
+  DT.harden = function (st, list, lv) {
+    if (lv < 2) return list;
+    var used = list.map(function (x) { return x.id; }), cnt = {};
+    return list.map(function (x) {
+      if (x.ph < 2 || x.rep) return x;
+      cnt[x.ph] = (cnt[x.ph] || 0) + 1; if (cnt[x.ph] % 2 === 1) return x;
+      var ex = EX[x.id], v = ex && ex.diff < lv ? DT.variantFor(ex.skill, st, used, lv) : null;
+      if (!v || EX[v].diff < 2) return x;
+      used.push(v); return { id: v, ph: x.ph, rep: false };
+    });
   };
 
   /* ---------- Fortschritt und Tagesplan ---------- */
@@ -574,10 +647,10 @@
   DT.buildDay = function (st, unit, today) {
     var wk = DT.WEEKS[unit.w], dy = wk.days[unit.d], list = [], used = [];
     dy.p.forEach(function (ids, pi) { ids.forEach(function (id) { used.push(id); }); });
-    var repl = [], nrep = (unit.w === 0 && unit.d === 0) ? 0 : Math.min(dy.p[0].length, 3);
+    var lv = DT.levelFor(st), repl = [], nrep = (unit.w === 0 && unit.d === 0) ? 0 : Math.min(dy.p[0].length, 3);
     DT.reviewPick(st, today, nrep + 2).forEach(function (k) {
       if (repl.length >= nrep) return;
-      var v = DT.variantFor(k, st, used.concat(repl)); if (v) repl.push(v);
+      var v = DT.variantFor(k, st, used.concat(repl), lv); if (v) repl.push(v);
     });
     dy.p.forEach(function (ids, pi) {
       ids.forEach(function (id, k) {
@@ -585,13 +658,13 @@
         else list.push({ id: id, ph: pi + 1, rep: false });
       });
     });
-    return list;
+    return DT.harden(st, list, lv);
   };
   /* Freie Wiederholung: bis zu 8 Aufgaben aus fälligen Fertigkeiten */
   DT.buildReview = function (st, today) {
-    var sk = DT.reviewPick(st, today, 8), list = [], used = [];
+    var lv = DT.levelFor(st), sk = DT.reviewPick(st, today, 8), list = [], used = [];
     for (var i = 0; i < 16 && list.length < 8 && sk.length; i++) {
-      var v = DT.variantFor(sk[i % sk.length], st, used);
+      var v = DT.variantFor(sk[i % sk.length], st, used, lv);
       if (v) { used.push(v); list.push({ id: v, ph: 1 + Math.min(3, Math.floor(list.length / 2)), rep: true }); }
     }
     return list;
