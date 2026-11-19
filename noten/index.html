@@ -249,7 +249,7 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 .dtw h3{font-family:var(--f-display);font-size:17px;margin:0 0 8px}
 .dt-sub{color:var(--muted);font-size:13.5px;margin:4px 0 0}
 .dt-pad{padding:0 4px}
-.dt-rules summary{cursor:pointer;font-size:15px}.dt-rules h3{margin:12px 0 4px;font-size:14px}.dt-rules ul{margin:0;padding-left:20px;font-size:14px;line-height:1.5}
+.ln-h{margin:18px 2px 6px}.ln-f{margin:10px 2px 2px}.ln-rb{display:flex;gap:6px;margin-top:6px}.ln-pk .dt-bar{margin:6px 0}.dt-rules summary{cursor:pointer;font-size:15px}.dt-rules h3{margin:12px 0 4px;font-size:14px}.dt-rules ul{margin:0;padding-left:20px;font-size:14px;line-height:1.5}
 .dt-hero{display:flex;justify-content:space-between;gap:12px;align-items:center}
 .dt-streak{text-align:center;background:var(--hl);color:#241c4f;border-radius:16px;padding:8px 14px;line-height:1.1}
 .dt-streak b{font-family:var(--f-display);font-size:28px;display:block}
@@ -423,6 +423,7 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
     <button type="button" role="tab" id="tabE" data-view="eingabe" aria-selected="true"><span class="ti" aria-hidden="true">✏️</span>Eintragen</button>
     <button type="button" role="tab" id="tabU" data-view="uebersicht" aria-selected="false"><span class="ti" aria-hidden="true">📊</span>Übersicht</button>
     <button type="button" role="tab" id="tabD" data-view="deutsch" aria-selected="false"><span class="ti" aria-hidden="true">🧠</span>Deutsch</button>
+    <button type="button" role="tab" id="tabL" data-view="lernen" aria-selected="false"><span class="ti" aria-hidden="true">📚</span>Lernen</button>
     <button type="button" role="tab" id="tabT" data-view="termine" aria-selected="false"><span class="ti" aria-hidden="true">📅</span>Termine</button>
     <button type="button" role="tab" id="tabZ" data-view="zeugnis" aria-selected="false"><span class="ti" aria-hidden="true">🏆</span>Zeugnisse</button>
     <button type="button" role="tab" id="tabS" data-view="einst" aria-selected="false"><span class="ti" aria-hidden="true">⚙️</span>Optionen</button>
@@ -433,6 +434,7 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
   <div id="viewDetail" class="stack" hidden></div>
   <div id="viewTermine" class="stack" hidden></div>
   <div id="viewDeutsch" class="stack" hidden></div>
+  <div id="viewLernen" class="stack" hidden></div>
   <div id="viewZeugnis" class="stack" hidden></div>
   <div id="viewEinst" class="stack" hidden></div>
 
@@ -444,6 +446,7 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 <script src="jspdf.umd.min.js"></script>
 <script src="deutsch.js"></script>
 <script src="deutsch-ui.js"></script>
+<script src="lernen.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail }
@@ -489,7 +492,7 @@ catch (e) { db = getFirestore(app); }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function fmt(n,d){return n.toFixed(d==null?2:d).replace('.',',')}
   function newId(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-  var VERSION='7';
+  var VERSION='8';
   var toastT=null;
   function say(t){$('msg').textContent=t||''}
   function toast(t,ms){var el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){el.hidden=true},ms||5000)}
@@ -636,8 +639,8 @@ catch (e) { db = getFirestore(app); }
     }
     /* Deutschtraining: ein Dokument pro Schüler. Fehler (z. B. Regeln noch nicht veröffentlicht) sperren die App nie. */
     unsubs.push(onSnapshot(doc(db,'dtrain',USER_UID),function(s){
-      DTUI.setData(s.exists()?s.data():null,false);
-    },function(){DTUI.setData(null,true)}));
+      DTUI.setData(s.exists()?s.data():null,false);LN.setData(s.exists()?s.data():null);
+    },function(){DTUI.setData(null,true);LN.setData(null)}));
     unsubs.push(onSnapshot(doc(db,'meta','settings'),function(s){
       D.meta=Object.assign({name:'',schuljahr:''},s.exists()?s.data():{});
       var f=ui.forceNext;ui.forceNext=false;
@@ -657,7 +660,7 @@ catch (e) { db = getFirestore(app); }
   function showApp(){$('login').hidden=true;$('app').hidden=false}
   function showNoAccess(){
     showApp();
-    $('viewEingabe').hidden=false;$('viewUebersicht').hidden=true;$('viewDetail').hidden=true;$('viewEinst').hidden=true;$('viewZeugnis').hidden=true;$('viewTermine').hidden=true;$('viewDeutsch').hidden=true;
+    $('viewEingabe').hidden=false;$('viewUebersicht').hidden=true;$('viewDetail').hidden=true;$('viewEinst').hidden=true;$('viewZeugnis').hidden=true;$('viewTermine').hidden=true;$('viewDeutsch').hidden=true;$('viewLernen').hidden=true;
     document.querySelector('.tabs').hidden=true;
     $('viewEingabe').innerHTML='<div class="empty"><strong>Kein Zugriff</strong>Dieses Konto ist für die Notenübersicht nicht freigegeben. Melde dich mit dem richtigen Konto an.</div>';
   }
@@ -691,7 +694,7 @@ catch (e) { db = getFirestore(app); }
 
   onAuthStateChanged(auth,function(user){
     if(!user){
-      stopListeners();DTUI.reset();ui.role='none';ui.me=null;D={meta:{name:'',schuljahr:''},faecher:[],noten:[],besuche:[],termine:[]};ui.besuchErr=false;ui.termErr=false;
+      stopListeners();DTUI.reset();LN.reset();ui.role='none';ui.me=null;D={meta:{name:'',schuljahr:''},faecher:[],noten:[],besuche:[],termine:[]};ui.besuchErr=false;ui.termErr=false;
       $('l-pass').value='';showLogin();return;
     }
     ui.me=user.uid;
@@ -707,11 +710,13 @@ catch (e) { db = getFirestore(app); }
   });
 
   /* ---------- Deutschtraining anbinden ---------- */
+  LN.init({el:$('viewLernen'),esc:esc,today:today,toast:toast,isAdmin:isAdmin,
+    save:function(p){return setDoc(doc(db,'dtrain',USER_UID),Object.assign({v:1},p),{merge:true}).catch(function(e){toast('Speichern nicht erlaubt oder fehlgeschlagen. Sind die Datenbank-Regeln aktuell?')})}});
   DTUI.init({
     el:$('viewDeutsch'),esc:esc,today:today,toast:toast,isAdmin:isAdmin,name:vorname,studentUid:USER_UID,
     save:function(p){return setDoc(doc(db,'dtrain',USER_UID),p,{merge:true}).catch(function(e){
       toast((e&&e.code==='permission-denied')?'Speichern nicht erlaubt. Die Datenbank-Regeln für das Deutschtraining fehlen noch.':'Speichern fehlgeschlagen. Der Fortschritt bleibt auf diesem Gerät erhalten.')})},
-    wipe:function(){return deleteDoc(doc(db,'dtrain',USER_UID)).catch(fail)}
+    wipe:function(){var k=LN.data();return (Object.keys(k).length?setDoc(doc(db,'dtrain',USER_UID),{v:1,ln:k}):deleteDoc(doc(db,'dtrain',USER_UID))).catch(fail)}
   });
 
   /* ---------- Kopf ---------- */
@@ -1503,9 +1508,9 @@ catch (e) { db = getFirestore(app); }
     if(!isAdmin()&&ui.view==='einst')ui.view='eingabe';
     $('tabS').hidden=!isAdmin();
     var v=ui.view;
-    $('tabE').setAttribute('aria-selected',v==='eingabe');$('tabU').setAttribute('aria-selected',v==='uebersicht');$('tabZ').setAttribute('aria-selected',v==='zeugnis');$('tabT').setAttribute('aria-selected',v==='termine');$('tabD').setAttribute('aria-selected',v==='deutsch');$('tabS').setAttribute('aria-selected',v==='einst');
+    $('tabE').setAttribute('aria-selected',v==='eingabe');$('tabU').setAttribute('aria-selected',v==='uebersicht');$('tabZ').setAttribute('aria-selected',v==='zeugnis');$('tabT').setAttribute('aria-selected',v==='termine');$('tabD').setAttribute('aria-selected',v==='deutsch');$('tabL').setAttribute('aria-selected',v==='lernen');$('tabS').setAttribute('aria-selected',v==='einst');
     if(v!=='uebersicht')ui.detail=null;
-    $('viewEingabe').hidden=v!=='eingabe';$('viewUebersicht').hidden=v!=='uebersicht'||!!ui.detail;$('viewDetail').hidden=!(v==='uebersicht'&&ui.detail);$('viewEinst').hidden=v!=='einst';$('viewZeugnis').hidden=v!=='zeugnis';$('viewTermine').hidden=v!=='termine';$('viewDeutsch').hidden=v!=='deutsch';
+    $('viewEingabe').hidden=v!=='eingabe';$('viewUebersicht').hidden=v!=='uebersicht'||!!ui.detail;$('viewDetail').hidden=!(v==='uebersicht'&&ui.detail);$('viewEinst').hidden=v!=='einst';$('viewZeugnis').hidden=v!=='zeugnis';$('viewTermine').hidden=v!=='termine';$('viewDeutsch').hidden=v!=='deutsch';$('viewLernen').hidden=v!=='lernen';
     if(v==='eingabe'){
       if(force||!ui.entryOk||ui.sig!==fachSig()){if(force||!busy('viewEingabe'))renderEntry()}
       else{renderRecent();refreshWichtig()}
@@ -1513,6 +1518,7 @@ catch (e) { db = getFirestore(app); }
       if(ui.detail){if(force||!busy('viewDetail'))renderDetail()}
       else if(force||!busy('viewUebersicht'))renderUeb();
     }else if(v==='deutsch'){DTUI.render()}
+    else if(v==='lernen'){LN.render()}
     else if(v==='termine'){if(force||!busy('viewTermine'))renderTermine()}
     else if(v==='zeugnis'){if(force||!busy('viewZeugnis'))renderZeugnis()}
     else if(v==='einst'){if(force||!busy('viewEinst'))renderEinst()}

@@ -85,7 +85,7 @@ service cloud.firestore {
     // Der Anwender liest und schreibt nur sein eigenes Dokument und darf Prüfvermerke ('review') und
     // Einstellungen ('cfg') nicht ändern. Der Admin liest, ergänzt und löscht.
     function dtGueltig(d) {
-      return d.keys().hasOnly(['v','start','done','days','srs','words','errors','texts','review','cfg'])
+      return d.keys().hasOnly(['v','start','done','days','srs','words','errors','texts','review','cfg','ln'])
         && d.v == 1;
     }
     match /dtrain/{uid} {
@@ -93,11 +93,11 @@ service cloud.firestore {
       allow create: if dtGueltig(request.resource.data)
         && (admin()
             || (anwender() && request.auth.uid == uid
-                && !request.resource.data.keys().hasAny(['review','cfg'])));
+                && !request.resource.data.keys().hasAny(['review','cfg','ln'])));
       allow update: if dtGueltig(request.resource.data)
         && (admin()
             || (anwender() && request.auth.uid == uid
-                && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['review','cfg'])));
+                && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['review','cfg','ln'])));
       allow delete: if admin();
     }
   }
