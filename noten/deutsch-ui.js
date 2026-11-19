@@ -427,7 +427,7 @@
   }
 
   /* ---------- Papier-Ablauf: Blatt anzeigen, Korrektur eintragen ---------- */
-  var cor = { f: {}, min: '', code: '' }, showSheet = false, armedDrop = false;
+  var cor = { f: {}, min: '', code: '' }, showSheet = false, armedDrop = false, msd = { key: '', min: '', g: 0, n: '' };
   function openSheetKey() {
     var ks = Object.keys(st.days || {}).filter(function (k) { return st.days[k].paper && st.days[k].part; }).sort();
     return ks.length ? ks[ks.length - 1] : null;
@@ -484,6 +484,10 @@
       var us = list.filter(function (u) { return u.ph === P.k; }); if (!us.length) return;
       h += '<div class="panel pad"><h3>' + P.e + ' ' + P.n + ' <span class="pill">' + P.min + ' Min.</span></h3>' + us.map(function (u) { n++; return paperTask(EX(u.id), n); }).join('') + '</div>';
     });
+    if (!C.isAdmin()) {
+      if (msd.key !== key) msd = { key: key, min: rec.ms && rec.ms.min ? String(rec.ms.min) : '', g: rec.ms ? rec.ms.g : 0, n: rec.ms && rec.ms.n ? rec.ms.n : '' };
+      h += DTMS.form(E, msd, rec.ms);
+    }
     return h + '</div>';
   }
   function corrHtml() {
@@ -498,7 +502,9 @@
     var rec = st.days[key], list = sheetList(key), n = 0;
     h += '<div class="panel pad"><h3>Offenes Blatt: ' + (rec.rep ? 'Wiederholung' : 'Woche ' + (/^w(\d+)/.exec(rec.k) || [0, '?'])[1] + ', Tag ' + ((/d(\d+)$/.exec(rec.k) || [0, '?'])[1])) + ' (' + fdate(key.slice(0, 10)) + ')</h3>' +
       '<p class="dt-sub">Nach der Korrektur: pro Aufgabe das Ergebnis wählen, die Übungszeit eintragen und speichern. Oder den Ergebnis-Code von Claude einfügen.</p>' +
+      (rec.ms ? '<div class="infobox"><b>Maximilian meldet:</b> ' + E(DTMS.text(rec.ms)) + '</div>' : '<p class="dt-sub">Noch keine Meldung von Maximilian.</p>') +
       '<div class="dt-try"><button class="btn small" type="button" data-a="sheetview">📄 Blatt ansehen und drucken</button></div>';
+    if (!cor.min && rec.ms && rec.ms.min) cor.min = String(rec.ms.min);
     h += '<div class="dt-cor">' + list.map(function (u) {
       n++; var ex = EX(u.id), v = cor.f[u.id];
       return '<div class="dt-crow"><div class="dt-cn">' + n + '</div><div class="dt-ct"><b>' + E(DT.SKILLS[ex.skill].n) + '</b><span>' + E(ex.q.slice(0, 70)) + (ex.q.length > 70 ? ' …' : '') + '</span></div><div class="dt-cb">' +
@@ -569,6 +575,12 @@
     if (a === 'sheetview') { showSheet = true; render(); window.scrollTo(0, 0); return; }
     if (a === 'sheetback') { showSheet = false; render(); return; }
     if (a === 'print') { try { window.print(); } catch (x) {} return; }
+    if (a === 'msg') { msd.g = +b.dataset.v; render(); return; }
+    if (a === 'mssend') {
+      var k3 = openSheetKey(), m3 = DTMS.make(msd, C.today());
+      if (!k3) return; if (!m3) { C.toast('Bitte wähle aus, wie es war.'); return; }
+      var pm = { days: {} }; pm.days[k3] = { ms: m3 }; save(pm); render(); C.toast('Danke! Papa sieht deine Meldung.'); return;
+    }
     if (a === 'cf') { cor.f[b.dataset.id] = +b.dataset.v; render(); return; }
     if (a === 'capply') {
       var key0 = openSheetKey(); if (!key0) return;
@@ -611,6 +623,8 @@
   }
   function onInput(e) {
     var t = e.target;
+    if (t.dataset.ms === 'min') { msd.min = t.value; return; }
+    if (t.dataset.ms === 'n') { msd.n = t.value; return; }
     if (t.id === 'dtmin') { cor.min = t.value; return; }
     if (t.id === 'dtcode') { cor.code = t.value; return; }
     var a = t.dataset.a; if (!a || !S || S.step !== 'task') return;
@@ -627,6 +641,34 @@
       e.preventDefault(); if (i >= 0 && i < all.length - 1) all[i + 1].focus(); else check();
     }
   }
+
+  /* Rückmeldung des Schülers zum Blatt (wird auch vom Lernen-Reiter benutzt) */
+  var FEEL = [[1, '😀', 'leicht'], [2, '🙂', 'geht so'], [3, '😓', 'schwer']];
+  window.DTMS = {
+    feel: function (g) { for (var i = 0; i < FEEL.length; i++) if (FEEL[i][0] === g) return FEEL[i]; return null; },
+    text: function (m) {
+      if (!m) return '';
+      var f = window.DTMS.feel(m.g);
+      return (m.min ? m.min + ' Min.' : '') + (f ? (m.min ? ', ' : '') + f[1] + ' ' + f[2] : '') + (m.n ? ' · „' + m.n + '“' : '');
+    },
+    form: function (esc, draft, saved) {
+      var h = '<div class="panel pad dtno-print dt-ms"><h3>Fertig? Sag Papa, wie es war</h3>';
+      if (saved) h += '<p class="dt-sub">✔ Gemeldet: ' + esc(window.DTMS.text(saved)) + '. Du kannst es noch ändern.</p>';
+      h += '<label class="fld">Wie lange hast du gebraucht? (Minuten)<input class="inp" data-ms="min" type="number" min="1" max="180" inputmode="numeric" value="' + esc(draft.min) + '" style="max-width:140px"></label>';
+      h += '<div class="dt-try" style="margin:10px 0">' + FEEL.map(function (f) { return '<button type="button" class="btn small' + (draft.g === f[0] ? ' primary' : '') + '" data-a="msg" data-v="' + f[0] + '">' + f[1] + ' ' + f[2] + '</button>'; }).join('') + '</div>';
+      h += '<label class="fld">Was war schwer oder leicht? (kurz)<textarea class="inp" data-ms="n" rows="2" maxlength="300">' + esc(draft.n) + '</textarea></label>';
+      return h + '<button class="btn primary" type="button" data-a="mssend" style="margin-top:8px">Meldung senden</button></div>';
+    },
+    /* Entwurf prüfen; liefert die Meldung oder null */
+    make: function (draft, today) {
+      var m = +draft.min;
+      if (!draft.g) return null;
+      var o = { d: today, g: draft.g, t: Date.now() };
+      if (m >= 1 && m <= 180) o.min = Math.round(m);
+      var n = String(draft.n || '').trim().slice(0, 300); if (n) o.n = n;
+      return o;
+    }
+  };
 
   window.DTUI = {
     init: function (ctx) {

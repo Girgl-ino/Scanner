@@ -2,7 +2,7 @@
    Pakete (JSON) erzeugt Claude aus Fotos vom Lernstoff; Georg fügt sie in der Elternansicht ein. */
 (function () {
   'use strict';
-  var C = null, ln = {}, loaded = false, el = null, view = { t: 'home' }, armed = null, sel = {}, msg = '';
+  var C = null, ln = {}, ms = {}, md = { key: '', min: '', g: 0, n: '' }, loaded = false, el = null, view = { t: 'home' }, armed = null, sel = {}, msg = '';
   function E(s) { return C.esc(s == null ? '' : s); }
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
   function ds(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -88,7 +88,7 @@
     var adm = C.isAdmin(), h = '<button class="btn small dtno-print" type="button" data-a="back">← Zurück</button><div class="panel pad"><div class="dt-meta">' + E(p.fach) + '</div><h2>' + E(p.titel) + '</h2>' + (p.typ === 'pruefung' ? '<p class="dt-sub">Schulaufgabe ' + E(fd(p.termin)) + '</p>' : '') + '</div>' + stoffHtml(p);
     p.blaetter.forEach(function (b, i) {
       var r = p.res[sheetKey(p, i)], st = r ? (acc(r) >= 0.8 ? '✔ ' + Math.round(acc(r) * 100) + ' %' : '↻ ' + Math.round(acc(r) * 100) + ' %, nochmal üben') : (p.plan ? 'empfohlen ' + fd(p.plan[i]) : 'offen');
-      h += '<div class="panel pad"><div class="dt-meta">' + (ART[b.art] || '') + ' · ' + E(st) + (r && fresh(p, i) === false && acc(r) >= 0.8 ? ' · zum Auffrischen' : '') + '</div><b>' + E(b.t) + '</b> <span class="dt-sub">(' + b.a.length + ' Aufgaben)</span><div><button class="btn small" type="button" data-a="open" data-id="' + E(id) + '" data-i="' + i + '">Anzeigen</button>' +
+      h += '<div class="panel pad"><div class="dt-meta">' + (ART[b.art] || '') + ' · ' + E(st) + (r && fresh(p, i) === false && acc(r) >= 0.8 ? ' · zum Auffrischen' : '') + '</div><b>' + E(b.t) + '</b> <span class="dt-sub">(' + b.a.length + ' Aufgaben)</span>' + (adm && ms[id + ':' + i] ? '<div class="dt-sub">💬 Maximilian: ' + E(DTMS.text(ms[id + ':' + i])) + '</div>' : '') + '<div><button class="btn small" type="button" data-a="open" data-id="' + E(id) + '" data-i="' + i + '">Anzeigen</button>' +
         (adm ? ' <button class="btn small" type="button" data-a="cor" data-id="' + E(id) + '" data-i="' + i + '">Korrektur</button>' : '') + '</div></div>';
     });
     if (adm) h += '<div class="panel pad dtno-print"><button class="btn" type="button" data-a="del" data-id="' + E(id) + '">' + (armed === id ? 'Wirklich löschen? Nochmal tippen' : 'Paket löschen') + '</button></div>';
@@ -100,12 +100,15 @@
     var b = p.blaetter[i], h = '<div class="dtno-print"><button class="btn small" type="button" data-a="pack" data-id="' + E(id) + '">← Zurück</button> <button class="btn small" type="button" data-a="print">🖨 Drucken</button></div>' + stoffHtml(p);
     h += '<div class="panel pad dtsheet"><div class="dt-meta">' + E(p.fach) + ' · ' + (ART[b.art] || '') + '</div><h2>' + E(b.t) + '</h2><p class="dt-sub">Schreibe die Lösungen auf Papier. Nummer vor jede Antwort schreiben. Name und Datum oben aufs Blatt.</p>';
     b.a.forEach(function (x, k) { h += '<div class="dt-pt"><b>' + (k + 1) + '.</b> ' + E(x.q) + '</div>'; });
-    return h + '</div>';
+    h += '</div>';
+    var mk = id + ':' + i;
+    if (!C.isAdmin()) { if (md.key !== mk) md = { key: mk, min: ms[mk] && ms[mk].min ? String(ms[mk].min) : '', g: ms[mk] ? ms[mk].g : 0, n: ms[mk] && ms[mk].n ? ms[mk].n : '' }; h += DTMS.form(E, md, ms[mk]); }
+    return h;
   }
 
   function corHtml(id, i) {
     var p = pk()[id], b = p.blaetter[i], key = id + ':' + i, s = sel[key] = sel[key] || b.a.map(function () { return -1; });
-    var h = '<button class="btn small" type="button" data-a="pack" data-id="' + E(id) + '">← Zurück</button><div class="panel pad"><h2>Korrektur: ' + E(b.t) + '</h2><p class="dt-sub">Nach der Auswertung von Claude: je Aufgabe ✔ richtig, ◐ teilweise, ✖ falsch.</p>';
+    var h = '<button class="btn small" type="button" data-a="pack" data-id="' + E(id) + '">← Zurück</button><div class="panel pad"><h2>Korrektur: ' + E(b.t) + '</h2><p class="dt-sub">Nach der Auswertung von Claude: je Aufgabe ✔ richtig, ◐ teilweise, ✖ falsch.</p>' + (ms[key] ? '<div class="infobox"><b>Maximilian meldet:</b> ' + E(DTMS.text(ms[key])) + '</div>' : '<p class="dt-sub">Noch keine Meldung von Maximilian.</p>');
     b.a.forEach(function (x, k) {
       h += '<div class="dt-pt"><b>' + (k + 1) + '.</b> ' + E(x.q) + (x.l ? '<br><small>Lösung: ' + E(x.l) + '</small>' : '') + '<div class="ln-rb">' + [[1, '✔'], [0.5, '◐'], [0, '✖']].map(function (o) { return '<button type="button" class="btn small' + (s[k] === o[0] ? ' primary' : '') + '" data-a="mk" data-key="' + E(key) + '" data-k="' + k + '" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div></div>';
     });
@@ -131,6 +134,11 @@
     else if (a === 'back') view = { t: 'home' };
     else if (a === 'print') { window.print(); return; }
     else if (a === 'cor') view = { t: 'cor', id: id, i: i };
+    else if (a === 'msg') md.g = +b.getAttribute('data-v');
+    else if (a === 'mssend') {
+      var mm = DTMS.make(md, C.today()); if (!mm) { C.toast('Bitte wähle aus, wie es war.'); return; }
+      var key9 = view.id + ':' + view.i; ms[key9] = mm; var pp9 = {}; pp9[key9] = mm; C.save({ ms: pp9 }); C.toast('Danke! Papa sieht deine Meldung.');
+    }
     else if (a === 'mk') { var s = sel[b.getAttribute('data-key')]; s[+b.getAttribute('data-k')] = +b.getAttribute('data-v'); }
     else if (a === 'import') {
       var r = parse((el.querySelector('#lnimp') || {}).value, C.today());
@@ -153,11 +161,11 @@
   }
 
   window.LN = {
-    init: function (ctx) { C = ctx; el = ctx.el; el.addEventListener('click', onClick); },
-    setData: function (data) { ln = (data && data.ln) || {}; loaded = true; if (el && !el.hidden) render(); },
+    init: function (ctx) { C = ctx; el = ctx.el; el.addEventListener('click', onClick); el.addEventListener('input', function (e) { var t = e.target; if (!t.dataset) return; if (t.dataset.ms === 'min') md.min = t.value; else if (t.dataset.ms === 'n') md.n = t.value; }); },
+    setData: function (data) { ln = (data && data.ln) || {}; ms = (data && data.ms) || {}; loaded = true; if (el && !el.hidden) render(); },
     data: function () { return ln; },
     render: render,
     parse: parse,
-    reset: function () { ln = {}; loaded = false; view = { t: 'home' }; sel = {}; armed = null; msg = ''; }
+    reset: function () { ln = {}; ms = {}; md = { key: '', min: '', g: 0, n: '' }; loaded = false; view = { t: 'home' }; sel = {}; armed = null; msg = ''; }
   };
 })();
