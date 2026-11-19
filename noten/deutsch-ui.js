@@ -354,6 +354,7 @@
     h += '<div class="panel pad"><h3>Das kann ich schon sicher</h3>' + (ms.length || mw.length ? '<div class="dt-tags">' + ms.map(function (k) { return '<span class="dt-tag">✓ ' + E(DT.SKILLS[k].n) + '</span>'; }).join('') + mw.map(function (w) { return '<span class="dt-tag w">' + E(w) + '</span>'; }).join('') + '</div>' : '<p class="dt-sub">Hier sammelst du, was du sicher kannst. Das füllt sich mit jedem Tag.</p>') + '</div>';
     h += '<div class="panel pad"><h3>Meine Erfolge</h3><div class="dt-badges">' + badges().map(function (b) { return '<div class="dt-badge' + (b.on ? ' on' : '') + '"><span>' + b.e + '</span>' + E(b.n) + '</div>'; }).join('') + '</div></div>';
     h += '<p class="dt-sub dt-pad">Papa sieht, wie du übst. So kann er dir helfen. Mit deinen Schulnoten hat das nichts zu tun.</p>';
+    h += '<details class="panel pad dt-rules"><summary><b>📖 Regeln zum Nachschlagen</b></summary>' + DT.RULES.map(function (g) { return '<h3>' + E(g.t) + '</h3><ul>' + g.r.map(function (x) { return '<li>' + E(x) + '</li>'; }).join('') + '</ul>'; }).join('') + '</details>';
     return h;
   }
 

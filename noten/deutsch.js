@@ -39,6 +39,14 @@
     'sb.zeichen': sk('Satzzeichen am Satzende', 'gr', LPB, 'Aussagesatz: Punkt. Fragesatz: Fragezeichen. Aufforderung oder Ausruf: Ausrufezeichen.'),
     'sb.satzglied': sk('Subjekt und Prädikat', 'gr', LPB, 'Prädikat = das Verb (Was tut er?). Das Subjekt fragst du mit „Wer oder was?“ + Prädikat.')
   };
+  var LPR2 = 'D 4.3 Richtig schreiben: Dehnung und Schärfung (Doppelkonsonanten, ck, tz, Doppelvokal, ie, Dehnungs-h)', LPV = 'D 4.2 Sprachliche Strukturen: Verben (Infinitiv, Personalform, Präsens)';
+  DT.SKILLS['ds.kurz'] = sk('Doppelkonsonant nach kurzem Vokal', 'rs', LPR2, 'Sprich das Wort in Silben (Was-ser). Steht nach einem kurzen Vokal nur ein Konsonant, verdoppelst du ihn: Wasser, Mutter, kommen.');
+  DT.SKILLS['ds.ck'] = sk('ck und tz nach kurzem Vokal', 'rs', LPR2, 'Nach einem kurzen Vokal schreibt man ck statt kk und tz statt zz: Decke, Bäcker, Katze, Mütze.');
+  DT.SKILLS['ds.lang'] = sk('Lange Vokale: Doppelvokal, ie, h', 'rs', LPR2, 'Ein langer Vokal wird oft markiert: mit Doppelvokal (Haar, See, Boot), mit ie (Wiese, Tier) oder mit Dehnungs-h (Zahl, Bahn). Nach einem langen Vokal steht kein Doppelkonsonant.');
+  DT.SKILLS['ds.stamm'] = sk('Verlängern und Wortstamm', 'rs', LPR2, 'Verlängere das Wort: Hund → Hunde (mit d), Kind → Kinder. Dann hörst du, wie der Wortstamm geschrieben wird.');
+  DT.SKILLS['vb.inf'] = sk('Verb: Grundform (Infinitiv)', 'gr', LPV, 'Die Grundform (Infinitiv) endet fast immer auf -en: lachen, singen, spielen. Sie verändert sich nicht.');
+  DT.SKILLS['vb.pers'] = sk('Verb: Personalform', 'gr', LPV, 'Das Verb passt sich an: ich lache, du lachst, er lacht, wir lachen, ihr lacht, sie lachen.');
+  DT.SKILLS['vb.praes'] = sk('Verb: Präsens bilden', 'gr', LPV, 'Im Präsens hängst du die Endung an den Wortstamm: wohn-e, wohn-st, wohn-t, wohn-en, wohn-t, wohn-en.');
   DT.TYPES = { single: 'Einzelauswahl', multi: 'Mehrfachauswahl', gap: 'Lückentext', text: 'Freie Eingabe', fix: 'Fehlertext korrigieren', assign: 'Zuordnen', order: 'Satzteile ordnen', own: 'Eigener Satz' };
 
   /* ---------- Hilfsfunktionen ---------- */
@@ -194,6 +202,110 @@
   S('x18', 'sb.satzglied', 'Wer oder was fängt? „Die Katze fängt eine Maus.“ Was ist das Subjekt?', ['Die Katze', 'fängt', 'eine Maus', 'Maus'], 0, 'Wer fängt? Die Katze. Das ist das Subjekt.', { pool: 1 });
   O('x19', 'sb.verb2', 'Bilde einen Satz. Tippe die Satzteile in der richtigen Reihenfolge an.', ['liest', 'Mein Bruder', 'ein Buch'], [[1, 0, 2], [2, 0, 1]], 'Das Verb steht an zweiter Stelle.', { pool: 1 });
 
+
+  /* ================= WOCHE 2: Doppelkonsonanten, ck/tz, lange Vokale, Verben ================= */
+  var KL = ['kurzer Vokal (Doppelkonsonant)', 'langer Vokal'];
+  var END = ['-e', '-st', '-t'];
+  var W3 = ['Nomen', 'Verb', 'Adjektiv'];
+  /* Montag */
+  S('a01', 'ds.kurz', 'Sprich das Wort in Silben: Was-ser. Welches Wort ist richtig geschrieben?', ['Wasser', 'Waser'], 0, 'Nach dem kurzen a folgt nur ein s-Laut. Darum verdoppelt man ihn: Wasser.');
+  S('a02', 'ds.kurz', 'Welches Wort hat einen kurzen Vokal?', ['Tür', 'Mutter', 'Hase', 'Wiese'], 1, 'Mut-ter: Das u ist kurz, und danach wird das t verdoppelt. Bei Tür, Hase und Wiese ist der Vokal lang.');
+  S('a03', 'ds.kurz', 'Welches Wort ist richtig geschrieben?', ['kommen', 'komen', 'komenn'], 0, 'Kom-men: Nach dem kurzen o wird das m verdoppelt.');
+  G('a04', 'ds.kurz', 'Schreibe die Wörter richtig auf. Die ___ (sone) scheint. Meine ___ (muter) kocht.', [['Sonne'], ['Mutter']], 'Son-ne und Mut-ter: Nach dem kurzen Vokal steht ein Doppelkonsonant.');
+  G('a05', 'ds.kurz', 'Schreibe die Wörter richtig auf. Ich trinke aus der ___ (tase). Er trägt eine ___ (brile).', [['Tasse'], ['Brille']], 'Tas-se und Bril-le: kurzer Vokal, darum Doppelkonsonant.');
+  A('a06', 'ds.kurz', 'Sprich das Wort laut. Ist der Vokal kurz oder lang? Ordne zu.', KL, [['Mutter', 0], ['Hase', 1], ['Tasse', 0], ['Boden', 1], ['Treppe', 0], ['Nase', 1]], 'Bei Mutter, Tasse und Treppe ist der Vokal kurz (Doppelkonsonant). Bei Hase, Boden und Nase ist er lang.');
+  F('a07', 'ds.kurz', 'In diesem Text sind Rechtschreibfehler. Finde sie und verbessere sie.', 'Meine Muter hat eine neue Brille. Die Tase steht auf dem Tisch. Wir komen bald.', 'Meine Mutter hat eine neue Brille. Die Tasse steht auf dem Tisch. Wir kommen bald.', 'Mutter, Tasse und kommen haben einen kurzen Vokal. Darum verdoppelst du den Konsonanten.');
+  T('a08', 'ds.kurz', 'Schreibe richtig auf: die treppe', ['die Treppe'], 'Trep-pe: kurzer Vokal, darum pp. Treppe ist ein Nomen und wird großgeschrieben.');
+  S('a09', 'vb.inf', 'Was ist die Grundform (Infinitiv) von „ich lache“?', ['lachen', 'lache', 'gelacht', 'lachte'], 0, 'Die Grundform endet auf -en: lachen.');
+  S('a10', 'vb.inf', 'Die Grundform (Infinitiv) eines Verbs endet fast immer auf ...', ['-en', '-ung', '-lich', '-heit'], 0, 'Verben in der Grundform enden auf -en: spielen, laufen, singen.');
+  M('a11', 'vb.inf', 'Welche Wörter sind Verben in der Grundform?', ['spielen', 'Spiel', 'laufen', 'laut'], [0, 2], 'Spielen und laufen sind Verben mit der Endung -en. Spiel ist ein Nomen, laut ein Adjektiv.');
+  G('a12', 'vb.pers', 'Setze die richtige Form von „spielen“ ein. Ich ___ Fußball. Du ___ Fußball. Er ___ Fußball.', [['spiele'], ['spielst'], ['spielt']], 'ich spiele, du spielst, er spielt: Die Endung ändert sich mit der Person.');
+  A('a13', 'vb.pers', 'Welche Endung hat das Verb? Ordne zu.', END, [['ich lache', 0], ['du lachst', 1], ['er lacht', 2], ['du singst', 1], ['ich renne', 0], ['sie rennt', 2]], 'ich → -e, du → -st, er/sie/es → -t.');
+  G('a14', 'ds.kurz', 'Schreibe die Wörter richtig auf. Im ___ (somer) esse ich mit dem ___ (löfel) Eis.', [['Sommer'], ['Löffel']], 'Som-mer und Löf-fel: kurzer Vokal, darum mm und ff.');
+  F('a15', 'ds.kurz', 'Finde die Fehler und verbessere sie.', 'Die Kinder renen zum Bett. Der Hund bellt laut und die Muter lacht.', 'Die Kinder rennen zum Bett. Der Hund bellt laut und die Mutter lacht.', 'Ren-nen und Mut-ter haben einen kurzen Vokal. Darum steht ein Doppelkonsonant.');
+  W('a16', 'ds.kurz', 'Schreibe einen eigenen Satz mit dem Wort „Mutter“ oder „Sonne“.', { any: ['Mutter', 'Sonne'], minWords: 4 }, 'Beide Wörter haben einen kurzen Vokal und einen Doppelkonsonanten, zum Beispiel: Die Sonne scheint heute.');
+  /* Dienstag */
+  S('b01', 'ds.ck', 'Nach einem kurzen Vokal schreibt man nicht kk, sondern ...', ['ck', 'kc', 'kg', 'gg'], 0, 'Statt kk schreibt man ck: Decke, Bäcker.');
+  S('b02', 'ds.ck', 'Nach einem kurzen Vokal schreibt man nicht zz, sondern ...', ['tz', 'zt', 'zs', 'ss'], 0, 'Statt zz schreibt man tz: Katze, Mütze.');
+  S('b03', 'ds.ck', 'Welches Wort ist richtig geschrieben?', ['Hecke', 'Heke', 'Hekke', 'Hecce'], 0, 'Hecke: kurzer Vokal, darum ck.');
+  G('b04', 'ds.ck', 'Schreibe die Wörter richtig auf. Die ___ (katze) schläft auf der ___ (deke).', [['Katze'], ['Decke']], 'Kat-ze und Decke: Nach kurzem Vokal tz und ck.');
+  G('b05', 'ds.ck', 'Schreibe die Wörter richtig auf. Ich habe Schmerzen im ___ (rüken). Meine ___ (müze) ist warm.', [['Rücken'], ['Mütze']], 'Rü-cken mit ck und Mü-tze mit tz.');
+  A('b06', 'ds.ck', 'ck oder tz? Wie wird das Wort richtig geschrieben? Ordne zu.', ['ck', 'tz'], [['Ka__e (miaut)', 1], ['Ba__en (im Ofen)', 0], ['Mü__e (auf dem Kopf)', 1], ['Ro__ (Kleidung)', 0], ['Pla__ (großer Ort)', 1], ['Ste__en (mit einer Nadel)', 0]], 'Katze, Mütze und Platz haben tz. Backen, Rock und Stecken haben ck.');
+  T('b07', 'ds.ck', 'Schreibe richtig auf: die pfütze', ['die Pfütze'], 'Pfüt-ze: kurzer Vokal, darum tz. Das Wort ist ein Nomen und wird großgeschrieben.');
+  F('b08', 'ds.ck', 'Finde die Fehler und verbessere sie.', 'Die Kaze sitzt auf der Deke. Der Beker hat frische Brötchen.', 'Die Katze sitzt auf der Decke. Der Bäcker hat frische Brötchen.', 'Katze (tz), Decke (ck) und Bäcker (ck): Nach kurzem Vokal schreibt man ck und tz. Bäcker kommt von backen.');
+  G('b09', 'vb.pers', 'Setze die richtige Form von „lachen“ ein. Wir ___ laut. Ihr ___ auch. Sie ___ nicht.', [['lachen'], ['lacht'], ['lachen']], 'wir lachen, ihr lacht, sie lachen.');
+  S('b10', 'vb.pers', 'Welche Form passt? „Ihr ___ im Garten.“ (spielen)', ['spielen', 'spielt', 'spielst', 'spiele'], 1, 'Zu „ihr“ passt die Endung -t: ihr spielt.');
+  A('b11', 'vb.pers', 'Einer oder mehrere? Ordne die Verbform zu.', ['einer (er/sie/es)', 'mehrere (sie)'], [['Der Hund bellt', 0], ['Die Hunde bellen', 1], ['Das Kind lacht', 0], ['Die Kinder lachen', 1], ['Anna singt', 0], ['Anna und Ben singen', 1]], 'Bei einer Person endet das Verb auf -t, bei mehreren auf -en.');
+  S('b12', 'sb.satzglied', 'Welches Wort ist das Prädikat? „Die Kinder rennen über die Wiese.“', ['Die Kinder', 'rennen', 'über die Wiese', 'Wiese'], 1, 'Das Prädikat ist das Verb: rennen.');
+  G('b13', 'vb.inf', 'Schreibe die Grundform (Infinitiv) auf. ich lache → ___ ; er singt → ___ ; wir spielen → ___', [['lachen'], ['singen'], ['spielen']], 'Die Grundform endet auf -en: lachen, singen, spielen.');
+  G('b14', 'ds.ck', 'Schreibe die Wörter richtig auf. Auf dem Kopf trage ich eine ___ (müze). Im Bett liegt eine ___ (deke).', [['Mütze'], ['Decke']], 'Mütze mit tz und Decke mit ck.');
+  F('b15', 'ds.ck', 'Finde die Fehler und verbessere sie.', 'Die Muter packt den Zuker in die Tase. Die Katze trinkt Milch.', 'Die Mutter packt den Zucker in die Tasse. Die Katze trinkt Milch.', 'Mutter (tt), Zucker (ck) und Tasse (ss): Nach kurzem Vokal wird verdoppelt oder ck/tz geschrieben.');
+  W('b16', 'ds.ck', 'Schreibe einen eigenen Satz mit einem Wort mit ck oder tz.', { any: ['ck', 'tz'], minWords: 4 }, 'Zum Beispiel: Die Katze sitzt auf der Decke.');
+  /* Mittwoch */
+  S('c01', 'ds.lang', 'Welches Wort ist richtig geschrieben?', ['Schnee', 'Schne'], 0, 'Schnee hat ein langes e. Es wird mit ee markiert.');
+  S('c02', 'ds.lang', 'Wie schreibt man ein langes i meistens?', ['ie', 'ih', 'i', 'ii'], 0, 'Ein langes i schreibt man meistens ie: Wiese, Tier, Liebe.');
+  S('c03', 'ds.lang', 'Welches Wort schreibt man mit Dehnungs-h?', ['Zahl', 'Ball', 'Mutter', 'Katze'], 0, 'In Zahl ist das a lang. Das h zeigt die Dehnung. Ball, Mutter und Katze haben einen kurzen Vokal.');
+  G('c04', 'ds.lang', 'Schreibe die Wörter richtig auf. Im ___ (se) schwimmt ein ___ (bot).', [['See'], ['Boot']], 'See und Boot haben einen langen Vokal, der mit ee und oo geschrieben wird.');
+  G('c05', 'ds.lang', 'Schreibe die Wörter richtig auf. Die ___ (wise) ist grün. Das ___ (tir) ist müde.', [['Wiese'], ['Tier']], 'Wiese und Tier haben ein langes i: ie.');
+  A('c06', 'ds.lang', 'Wie wird der lange Vokal markiert? Ordne zu.', ['Doppelvokal', 'ie', 'Dehnungs-h'], [['Haar', 0], ['Wiese', 1], ['Zahl', 2], ['Boot', 0], ['Tier', 1], ['Bahn', 2]], 'Haar und Boot: Doppelvokal. Wiese und Tier: ie. Zahl und Bahn: Dehnungs-h.');
+  T('c07', 'ds.lang', 'Schreibe richtig auf: das fahrrad', ['das Fahrrad'], 'Fahr-rad: Es kommt von fahren (mit Dehnungs-h) und Rad. Fahrrad ist ein Nomen.');
+  F('c08', 'ds.lang', 'Finde die Fehler und verbessere sie.', 'Im Winter liegt Schne auf der Wise. Ein Tir läuft über die Bahn.', 'Im Winter liegt Schnee auf der Wiese. Ein Tier läuft über die Bahn.', 'Schnee (ee), Wiese (ie) und Tier (ie) haben einen langen Vokal.');
+  G('c09', 'vb.praes', 'Setze die richtige Form von „wohnen“ ein. Ich ___ in München. Du ___ in Berlin. Er ___ in Hamburg.', [['wohne'], ['wohnst'], ['wohnt']], 'ich wohne, du wohnst, er wohnt.');
+  G('c10', 'vb.praes', 'Setze die richtige Form von „wohnen“ ein. Wir ___ am See. Ihr ___ am Fluss. Sie ___ im Dorf.', [['wohnen'], ['wohnt'], ['wohnen']], 'wir wohnen, ihr wohnt, sie wohnen.');
+  A('c11', 'wa.mix', 'Welche Wortart ist das Wort? Ordne zu.', W3, [['Wiese', 0], ['wohnen', 1], ['grün', 2], ['Boot', 0], ['lesen', 1], ['nass', 2]], 'Wiese und Boot sind Nomen, wohnen und lesen sind Verben, grün und nass sind Adjektive.');
+  S('c12', 'sb.satzglied', 'Was ist das Subjekt? „Auf der Wiese spielen die Kinder.“ Frage: Wer oder was spielt?', ['Auf der Wiese', 'spielen', 'die Kinder'], 2, 'Wer spielt? Die Kinder. Das ist das Subjekt.');
+  O('c13', 'sb.verb2', 'Bilde einen Satz. Bringe die Satzteile in eine passende Reihenfolge.', ['wohnt', 'Mein Onkel', 'am See'], [[1, 0, 2], [2, 0, 1]], 'Das Verb steht an zweiter Stelle: Mein Onkel wohnt am See. Oder: Am See wohnt mein Onkel.');
+  G('c14', 'ds.lang', 'Schreibe die Wörter richtig auf. Das ___ (boot) fährt über den ___ (se).', [['Boot'], ['See']], 'Boot (oo) und See (ee): Doppelvokale.');
+  F('c15', 'ds.lang', 'Finde die Fehler und verbessere sie.', 'Meine Muter wont am Se. Dort gibt es eine große Wise.', 'Meine Mutter wohnt am See. Dort gibt es eine große Wiese.', 'Mutter (kurzer Vokal, tt), wohnt (Dehnungs-h), See (ee) und Wiese (ie).');
+  W('c16', 'ds.lang', 'Schreibe einen eigenen Satz mit dem Wort „Wiese“ oder „See“.', { any: ['Wiese', 'See'], minWords: 4 }, 'Zum Beispiel: Am See gibt es eine große Wiese.');
+  /* Donnerstag */
+  S('e01', 'ds.kurz', 'Welches Wort ist falsch geschrieben?', ['Wasser', 'Mutter', 'Tase', 'Sonne'], 2, 'Richtig heißt es Tasse: kurzer Vokal, darum ss.');
+  S('e02', 'gk.nomen', 'Welcher Satz ist richtig geschrieben?', ['Die Mutter kocht Suppe.', 'die Mutter kocht Suppe.', 'Die mutter kocht suppe.'], 0, 'Satzanfang, Mutter und Suppe sind Nomen oder stehen am Satzanfang. Sie werden großgeschrieben.');
+  S('e03', 'ds.lang', 'Welches Wort ist falsch geschrieben?', ['Schnee', 'Wiese', 'Tir', 'Boot'], 2, 'Richtig heißt es Tier: langes i mit ie.');
+  F('e04', 'ds.lang', 'Finde alle Fehler (Groß- und Kleinschreibung und Doppellaute) und verbessere sie.', 'die Kinder fahren mit dem boot über den see. Die muter sitzt in der sone.', 'Die Kinder fahren mit dem Boot über den See. Die Mutter sitzt in der Sonne.', 'Satzanfang und Nomen schreibt man groß (Die, Boot, See, Mutter, Sonne). Mutter und Sonne haben einen Doppelkonsonanten.');
+  F('e05', 'ds.ck', 'Finde die Fehler und verbessere sie.', 'Auf dem Dach sitzt eine katze. Im Garten liegt eine Deke und eine Mütse.', 'Auf dem Dach sitzt eine Katze. Im Garten liegt eine Decke und eine Mütze.', 'Katze ist ein Nomen (groß, tz). Decke hat ck, Mütze hat tz.');
+  M('e06', 'ds.kurz', 'Welche Wörter sind richtig geschrieben?', ['Treppe', 'Tasse', 'Brile', 'Mutter', 'Komen'], [0, 1, 3], 'Richtig sind Treppe, Tasse und Mutter. Es heißt Brille und kommen oder Kommen.');
+  S('e07', 'ds.stamm', 'Verlängere das Wort: die Hunde. Welche Schreibweise ist richtig?', ['der Hund', 'der Hunt'], 0, 'Bei der Mehrzahl hörst du ein d: Hunde. Darum schreibst du Hund mit d.');
+  T('e08', 'ds.stamm', 'Verlängere das Wort (die Kinder) und schreibe richtig auf: das kint', ['das Kind'], 'Die Mehrzahl heißt Kinder mit d. Darum schreibt man Kind mit d. Kind ist ein Nomen.');
+  G('e09', 'vb.praes', 'Setze die richtige Form von „kommen“ ein. Ich ___ heute. Du ___ morgen. Er ___ später.', [['komme'], ['kommst'], ['kommt']], 'ich komme, du kommst, er kommt. Der Doppelkonsonant mm bleibt in allen Formen.');
+  A('e10', 'vb.pers', 'Welche Endung hat das Verb? Ordne zu.', END, [['ich komme', 0], ['du kommst', 1], ['er kommt', 2], ['du lachst', 1], ['ich wohne', 0], ['sie wohnt', 2]], 'ich → -e, du → -st, er/sie/es → -t.');
+  S('e11', 'vb.inf', 'Welche Form ist der Infinitiv?', ['kommen', 'kommt', 'kommst', 'komme'], 0, 'Die Grundform endet auf -en: kommen.');
+  M('e12', 'sb.satzglied', 'Das Wetter ist schlecht. Wir bleiben zu Hause. Welche Wörter sind Prädikate?', ['ist', 'Wetter', 'bleiben', 'Hause'], [0, 2], 'Die Prädikate sind die Verben: ist und bleiben.');
+  T('e13', 'sb.verb2', 'Beginne den Satz mit „Heute“: Wir wohnen am See.', ['Heute wohnen wir am See.'], 'Das Verb bleibt an zweiter Stelle: Heute (1) wohnen (2) wir am See.');
+  G('e14', 'ds.stamm', 'Schreibe die Wörter richtig auf. Der ___ (hunt) bellt. Das ___ (kint) lacht.', [['Hund'], ['Kind']], 'Verlängere: Hunde, Kinder. Dann hörst du das d.');
+  F('e15', 'ds.kurz', 'Finde die Fehler und verbessere sie.', 'im Sommer fahren wir an den See. Die Sone scheint und die Kinder baden im Waser.', 'Im Sommer fahren wir an den See. Die Sonne scheint und die Kinder baden im Wasser.', 'Satzanfang großschreiben. Sonne und Wasser haben einen kurzen Vokal und einen Doppelkonsonanten.');
+  W('e16', 'ds.kurz', 'Schreibe zwei Sätze. In jedem Satz soll ein Wort mit Doppelkonsonant vorkommen.', { minWords: 6 }, 'Zum Beispiel: Meine Mutter backt Brötchen. Wir kommen bald.');
+  /* Freitag: Wochentest */
+  S('g01', 'ds.kurz', 'Welches Wort ist richtig geschrieben?', ['Treppe', 'Trepe'], 0, 'Trep-pe: kurzer Vokal, darum pp.');
+  S('g02', 'ds.lang', 'Welches Wort ist richtig geschrieben?', ['Schnee', 'Schne'], 0, 'Schnee hat ein langes e mit ee.');
+  S('g03', 'ds.ck', 'Welches Wort ist richtig geschrieben?', ['Mütze', 'Mükze', 'Müze'], 0, 'Mütze: kurzer Vokal, darum tz.');
+  G('g04', 'ds.kurz', 'Schreibe die Wörter richtig auf. Die ___ (kane) steht auf dem ___ (bret).', [['Kanne'], ['Brett']], 'Kan-ne und Bret-t: kurzer Vokal, Doppelkonsonant.');
+  G('g05', 'ds.ck', 'Schreibe die Wörter richtig auf. Der ___ (beker) trägt eine ___ (müze).', [['Bäcker'], ['Mütze']], 'Bäcker mit ck, Mütze mit tz. Bäcker kommt von backen.');
+  G('g06', 'ds.lang', 'Schreibe die Wörter richtig auf. Auf der ___ (wise) liegt ___ (schne).', [['Wiese'], ['Schnee']], 'Wiese (ie) und Schnee (ee): lange Vokale.');
+  A('g07', 'ds.lang', 'Welche Schreibung hat das Wort? Ordne zu.', ['Doppelkonsonant', 'ck oder tz', 'langer Vokal'], [['Tasse', 0], ['Decke', 1], ['Wiese', 2], ['Mutter', 0], ['Katze', 1], ['Zahl', 2]], 'Tasse und Mutter: Doppelkonsonant. Decke und Katze: ck und tz. Wiese und Zahl: langer Vokal.');
+  F('g08', 'ds.kurz', 'Finde alle Fehler und verbessere sie.', 'die Muter und das Kint spielen auf der Wise. Dort liegt eine Deke.', 'Die Mutter und das Kind spielen auf der Wiese. Dort liegt eine Decke.', 'Satzanfang und Nomen groß. Mutter (tt), Kind (d), Wiese (ie), Decke (ck).', { w: 3 });
+  G('g09', 'vb.pers', 'Setze die richtige Form von „wohnen“ ein. Ich ___ hier. Du ___ dort. Wir ___ zusammen. Ihr ___ nebenan.', [['wohne'], ['wohnst'], ['wohnen'], ['wohnt']], 'ich wohne, du wohnst, wir wohnen, ihr wohnt.');
+  A('g10', 'wa.mix', 'Welche Wortart ist das Wort? Ordne zu.', W3, [['Mutter', 0], ['kommen', 1], ['laut', 2], ['Katze', 0], ['spielen', 1], ['müde', 2]], 'Mutter und Katze sind Nomen, kommen und spielen sind Verben, laut und müde sind Adjektive.');
+  S('g11', 'vb.inf', 'Wie lautet die Grundform (Infinitiv) von „du lachst“?', ['lachen', 'lachst', 'lacht', 'gelacht'], 0, 'Die Grundform endet auf -en: lachen.');
+  O('g12', 'sb.verb2', 'Bilde einen Satz. Bringe die Satzteile in eine passende Reihenfolge.', ['sitzt', 'Die Katze', 'auf der Decke'], [[1, 0, 2], [2, 0, 1]], 'Das Verb sitzt steht an zweiter Stelle.');
+  S('g13', 'sb.satzglied', 'Was ist das Prädikat? „Die Kinder wohnen am See.“', ['Die Kinder', 'wohnen', 'am See', 'See'], 1, 'Das Prädikat ist das Verb: wohnen.');
+  F('g14', 'ds.kurz', 'Finde alle Fehler und verbessere sie.', 'gestern sind wir mit dem Boot über den Se gefahren. Die Sone schien und meine Muter hat Kakao in der Tase gebracht.', 'Gestern sind wir mit dem Boot über den See gefahren. Die Sonne schien und meine Mutter hat Kakao in der Tasse gebracht.', 'Satzanfang groß. See (ee), Sonne, Mutter und Tasse haben Doppelkonsonanten oder Doppelvokale.', { w: 3 });
+  G('g15', 'ds.stamm', 'Schreibe die Wörter richtig auf. Die ___ (katze) sitzt auf der ___ (wise). Der ___ (hunt) rennt.', [['Katze'], ['Wiese'], ['Hund']], 'Katze (tz), Wiese (ie), Hund (verlängern: Hunde).');
+  W('g16', 'ds.kurz', 'Schreibe einen Satz mit einem Wort mit Doppelkonsonant und einem Wort mit ie.', { minWords: 6 }, 'Zum Beispiel: Die Katze liegt auf der Wiese.');
+  /* Pool Woche 2 */
+  G('y01', 'ds.kurz', 'Schreibe die Wörter richtig auf. Am ___ (himel) steht die ___ (sone).', [['Himmel'], ['Sonne']], 'Him-mel und Son-ne: kurzer Vokal, Doppelkonsonant.', { pool: 1 });
+  S('y02', 'ds.kurz', 'Welches Wort ist richtig geschrieben?', ['Zimmer', 'Zimer'], 0, 'Zim-mer: kurzer Vokal, darum mm.', { pool: 1 });
+  T('y03', 'ds.ck', 'Schreibe richtig auf: die ecke', ['die Ecke'], 'Ecke mit ck, denn der Vokal ist kurz. Es ist ein Nomen.', { pool: 1 });
+  S('y04', 'ds.ck', 'Welches Wort ist richtig geschrieben?', ['Glück', 'Glük', 'Glütz'], 0, 'Glück: kurzer Vokal, darum ck.', { pool: 1 });
+  G('y05', 'ds.lang', 'Schreibe die Wörter richtig auf. Ich trinke ___ (te). Der Zug fährt auf der ___ (ban).', [['Tee'], ['Bahn']], 'Tee (ee) und Bahn (Dehnungs-h).', { pool: 1 });
+  S('y06', 'ds.lang', 'Welches Wort ist richtig geschrieben?', ['Uhr', 'Ur', 'Uhhr'], 0, 'Uhr mit Dehnungs-h.', { pool: 1 });
+  S('y07', 'ds.stamm', 'Verlängere (die Berge). Welche Schreibweise ist richtig?', ['der Berg', 'der Berk'], 0, 'Bei Berge hörst du ein g. Darum schreibst du Berg mit g.', { pool: 1 });
+  T('y08', 'ds.stamm', 'Verlängere (die Hände) und schreibe richtig auf: die hant', ['die Hand'], 'Bei Hände hörst du ein d. Darum schreibst du Hand mit d.', { pool: 1 });
+  S('y09', 'vb.inf', 'Welche Grundform gehört zu „sie singt“?', ['singen', 'singt', 'sang', 'gesungen'], 0, 'Die Grundform endet auf -en: singen.', { pool: 1 });
+  G('y10', 'vb.pers', 'Setze die richtige Form von „spielen“ ein. Du ___ gut. Er ___ auch.', [['spielst'], ['spielt']], 'du spielst, er spielt.', { pool: 1 });
+  G('y11', 'vb.praes', 'Setze die richtige Form von „singen“ ein. Wir ___ ein Lied. Ihr ___ laut.', [['singen'], ['singt']], 'wir singen, ihr singt.', { pool: 1 });
+  A('y12', 'vb.pers', 'Welche Endung hat das Verb? Ordne zu.', END, [['ich singe', 0], ['du singst', 1], ['er singt', 2], ['ich renne', 0], ['du rennst', 1], ['sie rennt', 2]], 'ich → -e, du → -st, er/sie/es → -t.', { pool: 1 });
+
   /* ---------- Lernwortschatz Woche 1 ---------- */
   DT.WORDS = [
     ['Hund', 'Nomen', 'der Hund: Artikelprobe'], ['Sonne', 'Nomen', 'die Sonne: Artikelprobe'], ['Wohnung', 'Nomen', 'Endung -ung'],
@@ -208,6 +320,10 @@
   ].map(function (x) { return { w: x[0], cat: x[1], rule: x[2] }; });
   DT.WORDMAP = {};
   DT.WORDS.forEach(function (x) { DT.WORDMAP[x.w] = x; });
+
+
+  var W2W = [['Mutter','Doppelkonsonant','tt nach kurzem u'],['Wasser','Doppelkonsonant','ss nach kurzem a'],['Tasse','Doppelkonsonant','ss nach kurzem a'],['Brille','Doppelkonsonant','ll nach kurzem i'],['Treppe','Doppelkonsonant','pp nach kurzem e'],['Sommer','Doppelkonsonant','mm nach kurzem o'],['Löffel','Doppelkonsonant','ff nach kurzem ö'],['Himmel','Doppelkonsonant','mm nach kurzem i'],['Kanne','Doppelkonsonant','nn nach kurzem a'],['Brett','Doppelkonsonant','tt nach kurzem e'],['Katze','tz','tz statt zz'],['Mütze','tz','tz statt zz'],['Pfütze','tz','tz statt zz'],['Decke','ck','ck statt kk'],['Bäcker','ck','ck statt kk, von backen'],['Rücken','ck','ck statt kk'],['Zucker','ck','ck statt kk'],['Ecke','ck','ck statt kk'],['Haar','langer Vokal','Doppelvokal aa'],['See','langer Vokal','Doppelvokal ee'],['Boot','langer Vokal','Doppelvokal oo'],['Schnee','langer Vokal','Doppelvokal ee'],['Tee','langer Vokal','Doppelvokal ee'],['Wiese','langer Vokal','langes i = ie'],['Tier','langer Vokal','langes i = ie'],['Zahl','langer Vokal','Dehnungs-h'],['Bahn','langer Vokal','Dehnungs-h'],['Fahrrad','langer Vokal','Dehnungs-h (fahren)'],['Uhr','langer Vokal','Dehnungs-h'],['Kind','Verlängern','Kinder mit d'],['Berg','Verlängern','Berge mit g'],['Hand','Verlängern','Hände mit d']];
+  W2W.forEach(function (x) { if (!DT.WORDMAP[x[0]]) { var o = { w: x[0], cat: x[1], rule: x[2] }; DT.WORDS.push(o); DT.WORDMAP[x[0]] = o; } });
 
   /* ---------- Wochenplan ---------- */
   function ids(s) { return s.split(' '); }
@@ -226,9 +342,22 @@
       day('Wochentest', 'Test und Wiederholung', 'f01 f02 f03', 'f04 f05 f06 f07 f08', 'f09 f10 f11 f12 f13', 'f14 f15 f16')
     ]
   }];
+  DT.WEEKS.push({
+    n: 2, ready: true, title: 'Doppelkonsonanten, ck und tz, lange Vokale',
+    ziel: 'Sicher entscheiden, wann ein Konsonant verdoppelt wird (kurzer Vokal), wann ck und tz stehen und wie lange Vokale geschrieben werden (Doppelvokal, ie, Dehnungs-h). Außerdem die Verbformen ich, du, er, wir, ihr, sie bilden.',
+    rs: 'Doppelkonsonanten nach kurzem Vokal, ck und tz, Doppelvokal, ie, Dehnungs-h, Verlängern (Hund, Kind)',
+    gr: 'Verben: Grundform, Personalform, Präsens; Prädikat und Subjekt',
+    words: W2W.map(function (x) { return x[0]; }),
+    days: [
+      day('Kurz oder lang? Doppelkonsonanten', 'Neue Regeln', 'a01 a02 a03', 'a04 a05 a06 a07 a08', 'a09 a10 a11 a12 a13', 'a14 a15 a16'),
+      day('ck und tz', 'Anwenden und festigen', 'b01 b02 b03', 'b04 b05 b06 b07 b08', 'b09 b10 b11 b12 b13', 'b14 b15 b16'),
+      day('Lange Vokale: ee, oo, ie, h', 'Vertiefen', 'c01 c02 c03', 'c04 c05 c06 c07 c08', 'c09 c10 c11 c12 c13', 'c14 c15 c16'),
+      day('Fehler finden und verbessern', 'Fehler erkennen und korrigieren', 'e01 e02 e03', 'e04 e05 e06 e07 e08', 'e09 e10 e11 e12 e13', 'e14 e15 e16'),
+      day('Wochentest', 'Test und Wiederholung', 'g01 g02 g03', 'g04 g05 g06 g07 g08', 'g09 g10 g11 g12 g13', 'g14 g15 g16')
+    ]
+  });
   var NEXT = [
-    [2, 'Wortfamilien, Wortstamm, Vor- und Nachsilben (ver-, vor-), zusammengesetzte Nomen', 'Satzglieder: Subjekt und Prädikat, Umstellprobe und Ersatzprobe'],
-    [3, 'Dehnung (Doppelvokal, ie, h) und kurze Vokale (Doppelkonsonanten, ck, tz)', 'Verben: Infinitiv, Personalform (Person, Zahl), Präsens'],
+    [3, 'Wortfamilien, Wortstamm, Vor- und Nachsilben (ver-, vor-), zusammengesetzte Nomen', 'Satzglieder: Subjekt und Prädikat, Umstellprobe und Ersatzprobe'],
     [4, 'S-Laute (s, ss, ß) und das oder dass', 'Zeitformen: Präteritum und Perfekt (Partizip II, unregelmäßige Verben)'],
     [5, 'Ableiten (ä/e, äu/eu), Stammprinzip, englische Fremdwörter', 'Adjektive steigern, Fälle (Nominativ, Akkusativ, Dativ), Objekte, Artikel und Zahlwörter'],
     [6, 'Wörtliche Rede und ihre Satzzeichen, Anredeform, Wörterbuch benutzen', 'Pronomen (persönlich, besitzanzeigend), Adverbien, Adverbiale des Ortes und der Zeit'],
@@ -236,6 +365,31 @@
     [8, 'Wiederholung: persönliche Fehlerschwerpunkte, Texte überarbeiten', 'Wiederholung aller Grammatikthemen']
   ];
   NEXT.forEach(function (x) { DT.WEEKS.push({ n: x[0], ready: false, title: x[1], rs: x[1], gr: x[2], days: [] }); });
+
+
+  /* Regelkarte (Schülerseite, zum Nachschlagen) */
+  DT.RULES = [
+    { t: 'Groß oder klein?', r: [
+      'Nomen schreibt man groß. Probe: Passt der, die oder das davor? (der Hund, die Schule)',
+      'Das erste Wort im Satz und alle Namen schreibt man groß.',
+      'Endungen -ung, -heit, -keit, -schaft und -nis zeigen Nomen: Wohnung, Gesundheit, Freundschaft, Ergebnis.',
+      'Verben als Nomen: Steht ein Artikel davor (das, beim, zum), schreibt man groß: das Lesen, beim Essen.',
+      'Verben und Adjektive schreibt man klein: spielen, schön, freundlich.'
+    ] },
+    { t: 'Doppelte Konsonanten', r: [
+      'Sprich das Wort in Silben: Was-ser, Mut-ter.',
+      'Steht nach einem kurzen Vokal nur ein Konsonant, wird er verdoppelt: kommen, Tasse, Treppe.',
+      'Statt kk schreibt man ck, statt zz schreibt man tz: Decke, Bäcker, Katze, Mütze.',
+      'Nach einem langen Vokal verdoppelt man nicht: Hase, Boden, Nase.',
+      'Stehen nach dem kurzen Vokal zwei verschiedene Konsonanten, verdoppelt man nichts: Hund, Wand.'
+    ] },
+    { t: 'Lange Vokale', r: [
+      'Doppelvokal: aa, ee, oo (Haar, See, Boot).',
+      'ie für ein langes i: Wiese, Tier, Liebe.',
+      'Dehnungs-h: Zahl, Bahn, Uhr, wohnen.',
+      'Verlängern hilft: Hund (Hunde), Kind (Kinder), Berg (Berge).'
+    ] }
+  ];
 
   /* Selbsttest des Katalogs: alle Aufgaben des Plans vorhanden, Lösungen sinnvoll */
   DT.validate = function () {
@@ -370,7 +524,22 @@
     if (r.f < 0.999) st.errors[ex.skill] = (st.errors[ex.skill] || 0) + 1;
     Object.keys(r.words || {}).forEach(function (w) { st.words[w] = boxStep(st.words[w], r.words[w] ? 1 : 0, today, iv); });
   };
-  DT.skillMastered = function (s) { return !!s && s.b >= 3 && s.k >= 3; };
+  /* Ziel: dauerhaft Niveau "2" (ca. 80 % richtig), erst dann gilt eine Fertigkeit als gefestigt, kommt aber in langen Abständen immer wieder */
+  DT.TARGET = 0.8;
+  DT.skillAcc = function (s) { return s && s.n ? s.k / s.n : 0; };
+  DT.skillMastered = function (s) { return !!s && s.b >= 3 && s.k >= 3 && DT.skillAcc(s) >= DT.TARGET; };
+  /* Auswahl für Wiederholung über ALLE bisher geübten Fertigkeiten: fällige zuerst, dann unter Ziel, dann am längsten nicht gesehen */
+  DT.reviewPick = function (st, today, count) {
+    var c = [];
+    Object.keys(st.srs || {}).forEach(function (k) {
+      var s = st.srs[k]; if (!DT.SKILLS[k]) return;
+      var due = s.d && s.d <= today, acc = DT.skillAcc(s);
+      var sc = (due ? 0 : 40) + (acc >= DT.TARGET ? 25 : 0) + acc * 20 + s.b * 4 - (due ? Math.min(30, diffDays(s.d, today)) : 0) + Math.random() * 6;
+      c.push({ k: k, sc: sc });
+    });
+    c.sort(function (a, b) { return a.sc - b.sc; });
+    return c.slice(0, count).map(function (x) { return x.k; });
+  };
   DT.wordMastered = function (s) { return !!s && s.b >= 3 && s.k >= 2; };
   DT.dueSkills = function (st, today) {
     var out = [];
@@ -405,9 +574,11 @@
   DT.buildDay = function (st, unit, today) {
     var wk = DT.WEEKS[unit.w], dy = wk.days[unit.d], list = [], used = [];
     dy.p.forEach(function (ids, pi) { ids.forEach(function (id) { used.push(id); }); });
-    var due = DT.dueSkills(st, today).filter(function (x) { return !dy.p[0].some(function (id) { return EX[id].skill === x.k; }) || true; });
-    var repl = [];
-    due.slice(0, 2).forEach(function (x) { var v = DT.variantFor(x.k, st, used.concat(repl)); if (v) repl.push(v); });
+    var repl = [], nrep = (unit.w === 0 && unit.d === 0) ? 0 : Math.min(dy.p[0].length, 3);
+    DT.reviewPick(st, today, nrep + 2).forEach(function (k) {
+      if (repl.length >= nrep) return;
+      var v = DT.variantFor(k, st, used.concat(repl)); if (v) repl.push(v);
+    });
     dy.p.forEach(function (ids, pi) {
       ids.forEach(function (id, k) {
         if (pi === 0 && k < repl.length) list.push({ id: repl[k], ph: 1, rep: true });
@@ -418,12 +589,10 @@
   };
   /* Freie Wiederholung: bis zu 8 Aufgaben aus fälligen Fertigkeiten */
   DT.buildReview = function (st, today) {
-    var due = DT.dueSkills(st, today), list = [], used = [];
-    var sk = due.length ? due : Object.keys(st.srs || {}).map(function (k) { return { k: k }; });
-    for (var i = 0; list.length < 8 && sk.length && i < 24; i++) {
-      var v = DT.variantFor(sk[i % sk.length].k, st, used);
+    var sk = DT.reviewPick(st, today, 8), list = [], used = [];
+    for (var i = 0; i < 16 && list.length < 8 && sk.length; i++) {
+      var v = DT.variantFor(sk[i % sk.length], st, used);
       if (v) { used.push(v); list.push({ id: v, ph: 1 + Math.min(3, Math.floor(list.length / 2)), rep: true }); }
-      else if (i >= sk.length) break;
     }
     return list;
   };
