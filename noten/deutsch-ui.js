@@ -332,27 +332,28 @@
     }).join('');
   }
   function homeHtml() {
-    var u = DT.nextUnit(st), today = C.today(), h = '', sv = lsGet(lk());
+    var u = DT.nextUnit(st), today = C.today(), h = '', ok = openSheetKey();
     var dn = doneToday(), name = C.name();
-    h += '<div class="panel pad dt-hero"><div><h2>Deutsch üben' + (name ? ', ' + E(name) : '') + '</h2><p class="dt-sub">Jeden Tag etwa 20 Minuten. Das reicht.</p></div><div class="dt-streak" title="Tage in Folge"><b>' + streak() + '</b><span>🔥 Tage</span></div></div>';
-    if (sv && sv.step !== 'done' && !sv.probe && sv.list && sv.i < sv.list.length) {
-      h += '<div class="panel pad dt-today"><div class="dt-meta">Angefangen</div><h2>Weitermachen</h2><p class="dt-sub">Du hast schon ' + sv.res.length + ' von ' + sv.list.length + ' Aufgaben geschafft.</p><button class="btn primary submit" type="button" data-a="resume">Weitermachen</button><button class="btn small" type="button" data-a="discard">Neu beginnen</button></div>';
+    h += '<div class="panel pad dt-hero"><div><h2>Deutsch üben' + (name ? ', ' + E(name) : '') + '</h2><p class="dt-sub">Jeden Tag etwa 20 Minuten. Du schreibst auf Papier.</p></div><div class="dt-streak" title="Tage in Folge"><b>' + streak() + '</b><span>🔥 Tage</span></div></div>';
+    if (ok) {
+      var orec = st.days[ok];
+      h += '<div class="panel pad dt-today"><div class="dt-meta">Dein Blatt wartet</div><h2>' + (orec.rep ? 'Wiederholungsblatt' : 'Heutige Aufgaben') + '</h2><p class="dt-sub">' + sheetList(ok).length + ' Aufgaben · schreibe die Lösungen auf Papier. Danach fotografiert Papa dein Blatt.</p><button class="btn primary submit" type="button" data-a="sheetview">Aufgaben anzeigen</button></div>';
     } else if (u && !dn) {
-      var wk = DT.WEEKS[u.w], dy = wk.days[u.d], plan = DT.buildDay(st, u, today), partial = st.days[today] && st.days[today].part && st.days[today].k === u.key;
-      h += '<div class="panel pad dt-today"><div class="dt-meta">Heute · Woche ' + wk.n + ', Tag ' + (u.d + 1) + '</div><h2>' + E(dy.title) + '</h2><p class="dt-sub">' + E(dy.focus) + ' · etwa ' + Math.max(15, Math.min(25, DT.estMinutes(plan))) + ' Minuten</p><div class="dt-phrow">' + DT.PHASES.map(function (P) { return '<span class="dt-phc">' + P.e + ' ' + P.n + '<small>' + P.min + ' Min.</small></span>'; }).join('') + '</div><button class="btn primary submit" type="button" data-a="start">' + (partial ? 'Weitermachen' : 'Los geht’s') + '</button></div>';
+      var wk = DT.WEEKS[u.w], dy = wk.days[u.d];
+      h += '<div class="panel pad dt-today"><div class="dt-meta">Heute · Woche ' + wk.n + ', Tag ' + (u.d + 1) + '</div><h2>' + E(dy.title) + '</h2><p class="dt-sub">' + E(dy.focus) + ' · Papier und Stift bereitlegen</p><div class="dt-phrow">' + DT.PHASES.map(function (P) { return '<span class="dt-phc">' + P.e + ' ' + P.n + '<small>' + P.min + ' Min.</small></span>'; }).join('') + '</div><button class="btn primary submit" type="button" data-a="newsheet">Aufgaben öffnen</button></div>';
     } else if (dn) {
       var rec = st.days[today], lv = DT.level(rec.p);
-      h += '<div class="panel pad dt-today"><div class="dt-meta">Heute</div><h2>Heute ist geschafft ✔</h2><p><b>' + Math.round(rec.p) + ' von 20 Punkten</b> <span style="color:' + lvlColor(lv.c) + ';font-weight:700">· ' + lv.l + '</span></p><p class="dt-sub">Morgen geht es weiter. Wenn du magst, kannst du jetzt noch kurz wiederholen.</p><button class="btn" type="button" data-a="review">🔁 Freiwillig wiederholen</button></div>';
+      h += '<div class="panel pad dt-today"><div class="dt-meta">Heute</div><h2>Heute ist geschafft ✔</h2><p><b>' + Math.round(rec.p) + ' von 20 Punkten</b> <span style="color:' + lvlColor(lv.c) + ';font-weight:700">· ' + lv.l + '</span></p><p class="dt-sub">Morgen geht es weiter.</p><button class="btn" type="button" data-a="newrev">🔁 Wiederholungsblatt</button></div>';
     } else {
-      h += '<div class="panel pad dt-today"><div class="dt-meta">Alle geplanten Tage geschafft</div><h2>Stark! 🎉</h2><p class="dt-sub">Die nächsten Wochen werden bald freigeschaltet. Bis dahin kannst du wiederholen.</p><button class="btn primary submit" type="button" data-a="review">🔁 Wiederholen</button></div>';
+      h += '<div class="panel pad dt-today"><div class="dt-meta">Alle geplanten Tage geschafft</div><h2>Stark! 🎉</h2><p class="dt-sub">Die nächsten Wochen kommen bald. Bis dahin kannst du wiederholen.</p><button class="btn primary submit" type="button" data-a="newrev">🔁 Wiederholungsblatt</button></div>';
     }
+    h += lastResultHtml();
     var due = DT.dueSkills(st, today);
-    if (due.length && !dn && u) h += '<p class="dt-sub dt-pad">Heute sind ' + Math.min(2, due.length) + ' Wiederholungs-Aufgaben dabei, damit du nichts vergisst.</p>';
     h += '<div class="panel pad"><h3>Meine Wochen</h3><div class="dt-weeks">' + weekHtml() + '</div></div>';
     var ms = masteredSkills(), mw = masteredWords();
     h += '<div class="panel pad"><h3>Das kann ich schon sicher</h3>' + (ms.length || mw.length ? '<div class="dt-tags">' + ms.map(function (k) { return '<span class="dt-tag">✓ ' + E(DT.SKILLS[k].n) + '</span>'; }).join('') + mw.map(function (w) { return '<span class="dt-tag w">' + E(w) + '</span>'; }).join('') + '</div>' : '<p class="dt-sub">Hier sammelst du, was du sicher kannst. Das füllt sich mit jedem Tag.</p>') + '</div>';
     h += '<div class="panel pad"><h3>Meine Erfolge</h3><div class="dt-badges">' + badges().map(function (b) { return '<div class="dt-badge' + (b.on ? ' on' : '') + '"><span>' + b.e + '</span>' + E(b.n) + '</div>'; }).join('') + '</div></div>';
-    h += '<p class="dt-sub dt-pad">Deine Eltern können sehen, wie du übst. So können sie dir helfen. Mit deinen Schulnoten hat das nichts zu tun.</p>';
+    h += '<p class="dt-sub dt-pad">Papa sieht, wie du übst. So kann er dir helfen. Mit deinen Schulnoten hat das nichts zu tun.</p>';
     return h;
   }
 
@@ -377,14 +378,15 @@
   function pct(o) { return o.n ? Math.round(o.f / o.n * 100) + ' %' : '–'; }
   function parentHtml() {
     var us = stats(), h = '', nextU = DT.nextUnit(st), today = C.today();
-    h += '<div class="panel pad"><h2>Deutschtraining: ' + E(C.name() || 'Anwender') + '</h2><p class="dt-sub">So sehen Sie, wie und wie viel geübt wird. Die Punkte sind keine Schulnoten und beeinflussen den Notendurchschnitt nicht.</p>';
+    h += corrHtml();
+    h += '<div class="panel pad"><h2>Deutschtraining: ' + E(C.name() || 'Anwender') + '</h2><p class="dt-sub">Die Punkte sind keine Schulnoten und beeinflussen den Notendurchschnitt nicht.</p>';
     var wkDone = DT.WEEKS[0].days.filter(function (d, i) { return unitDone('w1d' + (i + 1)); }).length;
     h += '<div class="tiles"><div class="tile"><div class="k">Tage geübt</div><div class="v">' + us.days.filter(function (d) { return !d.rep; }).length + '</div><div class="s">Woche 1: ' + wkDone + ' von 5</div></div>' +
       '<div class="tile"><div class="k">Echte Übungszeit</div><div class="v">' + Math.round(us.dur / 60) + ' Min.</div><div class="s">Ø ' + (us.days.length ? Math.round(us.dur / 60 / us.days.length) : 0) + ' Min. pro Einheit</div></div>' +
       '<div class="tile"><div class="k">Rechtschreibung</div><div class="v">' + pct(us.area.rs) + '</div><div class="s">richtig gelöst</div></div>' +
       '<div class="tile"><div class="k">Grammatik</div><div class="v">' + pct(us.area.gr) + '</div><div class="s">richtig gelöst</div></div>' +
       '<div class="tile"><div class="k">Erstmals / Wiederholung</div><div class="v">' + pct(us.first) + ' / ' + pct(us.rep) + '</div><div class="s">Aufgaben neu / wiederholt</div></div>' +
-      '<div class="tile"><div class="k">Mit Tipp gelöst</div><div class="v">' + (us.total ? Math.round(us.help / us.total * 100) : 0) + ' %</div><div class="s">' + us.help + ' von ' + us.total + ' Aufgaben</div></div></div></div>';
+      (us.help ? '<div class="tile"><div class="k">Mit Tipp gelöst</div><div class="v">' + Math.round(us.help / us.total * 100) + ' %</div><div class="s">' + us.help + ' von ' + us.total + ' Aufgaben</div></div>' : '') + '</div></div>';
     h += '<div class="panel pad"><h3>Verlauf</h3><div class="chart">' + svgChart(us.days) + '</div></div>';
     /* Tage */
     h += '<div class="panel"><div class="pad"><h3>Übungstage</h3></div>' + (us.days.length ? us.days.slice().reverse().map(function (x) {
@@ -423,12 +425,126 @@
     return h;
   }
 
+  /* ---------- Papier-Ablauf: Blatt anzeigen, Korrektur eintragen ---------- */
+  var cor = { f: {}, min: '', code: '' }, showSheet = false, armedDrop = false;
+  function openSheetKey() {
+    var ks = Object.keys(st.days || {}).filter(function (k) { return st.days[k].paper && st.days[k].part; }).sort();
+    return ks.length ? ks[ks.length - 1] : null;
+  }
+  function sheetList(key) { return (st.days[key].l || []).map(function (x) { return { id: x[0], ph: x[1], rep: !!x[2] }; }).filter(function (u) { return EX(u.id); }); }
+  function createSheet(kind) {
+    if (openSheetKey()) { showSheet = true; render(); return; }
+    var today = C.today(), list, key, unitKey;
+    if (kind === 'unit') {
+      var u = DT.nextUnit(st); if (!u) { C.toast('Alle geplanten Tage sind geschafft.'); return; }
+      if (doneToday()) { C.toast('Heute ist schon geschafft.'); return; }
+      list = DT.buildDay(st, u, today); key = today; unitKey = u.key;
+    } else {
+      list = DT.buildReview(st, today); if (!list.length) { C.toast('Gerade gibt es nichts zu wiederholen.'); return; }
+      var n = 1; while (st.days[today + '~r' + n]) n++; key = today + '~r' + n; unitKey = 'rep';
+    }
+    var rec = { k: unitKey, paper: 1, part: 1, l: list.map(function (x) { return [x.id, x.ph, x.rep ? 1 : 0]; }), r: [], p: 0, pp: [0, 0, 0, 0], dur: 0, rep: kind === 'unit' ? 0 : 1, t: Date.now() };
+    var p = { days: {} }; p.days[key] = rec; save(p);
+    cor = { f: {}, min: '', code: '' }; showSheet = true; render(); window.scrollTo(0, 0);
+  }
+  function shufOrder(ex, n) {
+    var a = ex.parts.map(function (_, i) { return i; }), seed = n * 5 + 1;
+    for (var k = a.length - 1; k > 0; k--) { seed = (seed * 31 + 11) % 97; var j = seed % (k + 1); var t = a[k]; a[k] = a[j]; a[j] = t; }
+    if (ex.sols.some(function (s) { return s.every(function (x, i) { return x === a[i]; }); })) a.push(a.shift());
+    return a;
+  }
+  function paperTask(ex, n) {
+    var L = 'ABCDEFG', h = '<div class="dt-pt"><div class="dt-pn">' + n + '</div><div class="dt-pb">';
+    if (ex.t === 'single' || ex.t === 'multi') {
+      h += '<p class="dt-pq">' + E(ex.q) + '</p><div class="dt-po">' + ex.opts.map(function (o, i) { return '<div><b>' + L[i] + ')</b> ' + E(o) + '</div>'; }).join('') + '</div><p class="dt-ph2">' + (ex.t === 'multi' ? 'Mehrere sind richtig. Schreibe die Buchstaben auf.' : 'Schreibe den Buchstaben auf.') + '</p>';
+    } else if (ex.t === 'gap') {
+      h += '<p class="dt-ph2">Schreibe die fehlenden Wörter richtig geschrieben auf.</p><p class="dt-pq">' + E(ex.q).replace(/___/g, '<span class="dt-bl"></span>') + '</p>';
+    } else if (ex.t === 'text') {
+      h += '<p class="dt-pq">' + E(ex.q) + '</p>';
+    } else if (ex.t === 'assign') {
+      h += '<p class="dt-pq">' + E(ex.q) + '</p><div class="dt-po">' + ex.items.map(function (it, i) { return '<div><b>' + 'abcdefghij'[i] + ')</b> ' + E(it.t) + '</div>'; }).join('') + '</div><p class="dt-ph2">Gruppen: <b>' + ex.cats.map(E).join('</b> · <b>') + '</b>. Schreibe zu jedem Buchstaben die passende Gruppe auf.</p>';
+    } else if (ex.t === 'fix') {
+      h += '<p class="dt-pq">' + E(ex.q.replace(/Tippe auf[^.]*\.\s*/, '')) + '</p><div class="dt-pbox">' + E(ex.tokens.join(' ')) + '</div><p class="dt-ph2">Schreibe den Text ohne Fehler auf.</p>';
+    } else if (ex.t === 'order') {
+      h += '<p class="dt-pq">' + E(ex.q.replace(/Tippe[^.]*\./, 'Bringe die Satzteile in eine passende Reihenfolge.')) + '</p><div class="dt-pbox">' + shufOrder(ex, n).map(function (i) { return '<span class="dt-pch">' + E(ex.parts[i]) + '</span>'; }).join(' ') + '</div><p class="dt-ph2">Schreibe den ganzen Satz auf (mit Punkt).</p>';
+    } else if (ex.t === 'own') {
+      h += '<p class="dt-pq">' + E(ex.q) + '</p><p class="dt-ph2">Schreibe einen ganzen Satz.</p>';
+    }
+    return h + '<details class="dtno-print"><summary>💡 Tipp</summary><div class="dt-tip">' + E(ex.hint) + '</div></details></div></div>';
+  }
+  function sheetHtml() {
+    var key = openSheetKey(); if (!key) { showSheet = false; return C.isAdmin() ? parentHtml() : homeHtml(); }
+    var rec = st.days[key], list = sheetList(key), n = 0, h = '';
+    var wk = /^w(\d+)d(\d+)$/.exec(rec.k), title = rec.rep ? 'Wiederholungsblatt' : (wk ? DT.WEEKS[+wk[1] - 1].days[+wk[2] - 1].title : 'Blatt');
+    h += '<div class="dtsheet"><div class="dt-top dtno-print"><button class="btn small" type="button" data-a="sheetback">← Zurück</button><button class="btn small" type="button" data-a="print">🖨 Drucken</button></div>';
+    h += '<div class="panel pad"><h2>' + E(title) + '</h2><p class="dt-sub">' + (wk ? 'Woche ' + wk[1] + ', Tag ' + wk[2] + ' · ' : '') + fdate(key.slice(0, 10)) + '</p>';
+    h += '<div class="infobox dt-how"><b>So geht’s:</b> Schreibe alles von Hand auf ein Blatt Papier. Setze immer die Nummer der Aufgabe davor. Schreibe ordentlich und lass Platz zwischen den Aufgaben. Wenn du fertig bist, fotografiert Papa dein Blatt.</div></div>';
+    DT.PHASES.forEach(function (P) {
+      var us = list.filter(function (u) { return u.ph === P.k; }); if (!us.length) return;
+      h += '<div class="panel pad"><h3>' + P.e + ' ' + P.n + ' <span class="pill">' + P.min + ' Min.</span></h3>' + us.map(function (u) { n++; return paperTask(EX(u.id), n); }).join('') + '</div>';
+    });
+    return h + '</div>';
+  }
+  function corrHtml() {
+    var key = openSheetKey(), h = '';
+    if (!key) {
+      var nu = DT.nextUnit(st), canU = nu && !doneToday();
+      h += '<div class="panel pad"><h3>Aufgabenblatt</h3><p class="dt-sub">Maximilian bekommt die Aufgaben in der App angezeigt und schreibt sie von Hand. Sie fotografieren das Blatt und senden es an Claude zur Korrektur. Das Ergebnis tragen Sie danach hier ein.</p>' +
+        (canU ? '<button class="btn primary" type="button" data-a="newsheet">📄 Blatt für Woche ' + DT.WEEKS[nu.w].n + ', Tag ' + (nu.d + 1) + ' anlegen</button> ' : '<p class="dt-sub">' + (nu ? 'Heute ist schon geschafft.' : 'Alle geplanten Tage sind geschafft.') + '</p>') +
+        '<button class="btn" type="button" data-a="newrev">🔁 Wiederholungsblatt anlegen</button></div>';
+      return h;
+    }
+    var rec = st.days[key], list = sheetList(key), n = 0;
+    h += '<div class="panel pad"><h3>Offenes Blatt: ' + (rec.rep ? 'Wiederholung' : 'Woche ' + (/^w(\d+)/.exec(rec.k) || [0, '?'])[1] + ', Tag ' + ((/d(\d+)$/.exec(rec.k) || [0, '?'])[1])) + ' (' + fdate(key.slice(0, 10)) + ')</h3>' +
+      '<p class="dt-sub">Nach der Korrektur: pro Aufgabe das Ergebnis wählen, die Übungszeit eintragen und speichern. Oder den Ergebnis-Code von Claude einfügen.</p>' +
+      '<div class="dt-try"><button class="btn small" type="button" data-a="sheetview">📄 Blatt ansehen und drucken</button></div>';
+    h += '<div class="dt-cor">' + list.map(function (u) {
+      n++; var ex = EX(u.id), v = cor.f[u.id];
+      return '<div class="dt-crow"><div class="dt-cn">' + n + '</div><div class="dt-ct"><b>' + E(DT.SKILLS[ex.skill].n) + '</b><span>' + E(ex.q.slice(0, 70)) + (ex.q.length > 70 ? ' …' : '') + '</span></div><div class="dt-cb">' +
+        [[1, '✔'], [0.5, '◐'], [0, '✖']].map(function (x) { return '<button type="button" class="dt-cbt' + (v === x[0] ? ' on' + (x[0] === 1 ? ' g' : x[0] === 0 ? ' r' : ' y') : '') + '" data-a="cf" data-id="' + u.id + '" data-v="' + x[0] + '" aria-label="' + (x[0] === 1 ? 'richtig' : x[0] === 0 ? 'falsch' : 'teilweise') + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
+    }).join('') + '</div>';
+    h += '<p class="dt-sub">✔ richtig · ◐ teilweise richtig · ✖ falsch</p>';
+    h += '<label class="fld" style="margin-top:10px">Übungszeit in Minuten<input class="inp" id="dtmin" type="number" min="1" max="180" inputmode="numeric" value="' + E(cor.min) + '" style="max-width:140px"></label>';
+    h += '<label class="fld" style="margin-top:10px">Ergebnis-Code von Claude (optional)<textarea class="inp" id="dtcode" rows="2" placeholder="DT1 min=22 m01=1 m02=0.5 …">' + E(cor.code) + '</textarea></label><div class="dt-try" style="margin-top:8px"><button class="btn small" type="button" data-a="capply">Code übernehmen</button></div>';
+    h += '<div class="dt-try" style="margin-top:12px"><button class="btn primary" type="button" data-a="csave">Ergebnis speichern</button><button class="btn small danger' + (armedDrop ? ' armed' : '') + '" type="button" data-a="cdrop">' + (armedDrop ? 'Wirklich verwerfen? Nochmal tippen' : 'Blatt verwerfen') + '</button></div></div>';
+    return h;
+  }
+  function finalizeSheet(key) {
+    var rec = st.days[key], list = sheetList(key), min = +cor.min;
+    if (!(min >= 1 && min <= 180)) { C.toast('Bitte die Übungszeit in Minuten eintragen.'); return; }
+    var miss = list.filter(function (u) { return cor.f[u.id] == null; });
+    if (miss.length) { C.toast('Es fehlt noch das Ergebnis bei ' + miss.length + ' Aufgabe(n).'); return; }
+    S = { mode: rec.rep ? 'review' : 'unit', key: rec.k === 'rep' ? '' : rec.k, date: key.slice(0, 10), list: list, i: list.length, res: [], applied: 0, tdone: 0, probe: false };
+    list.forEach(function (u) { var f = cor.f[u.id], ex = EX(u.id); S.res.push({ id: u.id, ph: u.ph, f: f, h: 0, rep: u.rep ? 1 : 0, sec: Math.round(min * 60 / list.length), wd: DT.wordsOfTask(ex, f) }); });
+    applyPending();
+    var r2 = dayRecord(true); r2.paper = 1;
+    var p = { days: {}, srs: st.srs, words: st.words, errors: st.errors };
+    p.days[key] = r2;
+    if (!st.start) p.start = S.date;
+    if (S.mode === 'unit') { p.done = {}; p.done[S.key] = S.date; }
+    var pts = DT.points(list, S.res);
+    S = null; cor = { f: {}, min: '', code: '' }; showSheet = false;
+    save(p); render();
+    C.toast('Gespeichert: ' + pts.rounded + ' von 20 Punkten.');
+  }
+  function lastResultHtml() {
+    var ks = finishedDays().filter(function (k) { return isDay(k); });
+    if (!ks.length) return '';
+    var k = ks[ks.length - 1], d = st.days[k], bad = (d.r || []).filter(function (r) { return r[2] < 0.999 && EX(r[0]); });
+    var lv = DT.level(d.p);
+    var h = '<div class="panel pad"><h3>Letztes Ergebnis (' + fdate(k) + ')</h3><p><b>' + Math.round(d.p) + ' von 20 Punkten</b> <span style="color:' + lvlColor(lv.c) + ';font-weight:700">· ' + lv.l + '</span></p>';
+    if (bad.length) h += '<p class="dt-sub">Das schauen wir uns noch einmal an:</p>' + bad.slice(0, 6).map(function (r) { var ex = EX(r[0]); return '<div class="dt-rule" style="margin-top:6px"><span>' + E(DT.SKILLS[ex.skill].n) + '</span>' + E(ex.expl) + '</div>'; }).join('');
+    else h += '<p class="dt-sub">Alles richtig. Super!</p>';
+    return h + '</div>';
+  }
+
   /* ---------- Rendern und Ereignisse ---------- */
   function render() {
     if (!C) return;
     var h;
     if (err && !loaded) h = '<div class="empty"><strong>Deutschtraining nicht verfügbar</strong>Die Datenbank-Regeln für das Deutschtraining sind noch nicht veröffentlicht. Bitte die neuen Regeln in Firebase eintragen.</div>';
     else if (S) h = S.step === 'done' ? doneHtml() : runHtml();
+    else if (showSheet) h = sheetHtml();
     else if (C.isAdmin()) h = parentHtml();
     else h = homeHtml();
     el.innerHTML = '<div class="dtw">' + h + '</div>';
@@ -446,6 +562,25 @@
       if (a === 'ordx') { c.ord.splice(+b.dataset.k, 1); render(); return; }
       if (a === 'tip') { c.h = 1; render(); return; }
       if (a === 'check') { check(); return; }
+    }
+    if (a === 'newsheet') { createSheet('unit'); return; }
+    if (a === 'newrev') { createSheet('rev'); return; }
+    if (a === 'sheetview') { showSheet = true; render(); window.scrollTo(0, 0); return; }
+    if (a === 'sheetback') { showSheet = false; render(); return; }
+    if (a === 'print') { try { window.print(); } catch (x) {} return; }
+    if (a === 'cf') { cor.f[b.dataset.id] = +b.dataset.v; render(); return; }
+    if (a === 'capply') {
+      var key0 = openSheetKey(); if (!key0) return;
+      var pr = DT.parseCode($('#dtcode').value, sheetList(key0));
+      if (!pr.ok) { C.toast(pr.err); return; }
+      cor.f = pr.f; if (pr.min) cor.min = String(pr.min); cor.code = $('#dtcode').value; render(); C.toast('Code übernommen. Bitte prüfen und speichern.'); return;
+    }
+    if (a === 'csave') { var key1 = openSheetKey(); if (key1) finalizeSheet(key1); return; }
+    if (a === 'cdrop') {
+      if (!armedDrop) { armedDrop = true; render(); setTimeout(function () { armedDrop = false; if (!S) render(); }, 5000); return; }
+      armedDrop = false; var key2 = openSheetKey();
+      if (key2) { var pd = { days: {} }; pd.days[key2] = { k: 'x', paper: 0, part: 1, l: [], r: [], p: 0, pp: [0, 0, 0, 0], dur: 0, rep: 0, t: Date.now() }; save(pd); }
+      cor = { f: {}, min: '', code: '' }; showSheet = false; render(); return;
     }
     if (a === 'next') { next(); return; }
     if (a === 'go') { S.step = 'task'; S.t0 = Date.now(); persistSess(); render(); window.scrollTo(0, 0); return; }
@@ -474,7 +609,10 @@
     if (a === 'wipe') { if (!armedDel) { armedDel = true; render(); setTimeout(function () { armedDel = false; if (!S) render(); }, 5000); return; } armedDel = false; C.wipe().then(function () { st = emptyState(); lsSet(lk(), null); lsSet('dtcache:' + C.studentUid, null); render(); C.toast('Lernstand gelöscht.'); }); return; }
   }
   function onInput(e) {
-    var t = e.target, a = t.dataset.a; if (!a || !S || S.step !== 'task') return;
+    var t = e.target;
+    if (t.id === 'dtmin') { cor.min = t.value; return; }
+    if (t.id === 'dtcode') { cor.code = t.value; return; }
+    var a = t.dataset.a; if (!a || !S || S.step !== 'task') return;
     var c = S.cur;
     if (a === 'gap') { c.g = c.g || []; c.g[+t.dataset.i] = t.value; }
     else if (a === 'txt') c.txt = t.value;
@@ -504,7 +642,7 @@
     },
     render: render,
     busy: function () { return !!(S && S.step === 'task'); },
-    reset: function () { S = null; st = emptyState(); loaded = false; err = false; tab = 'home'; },
+    reset: function () { showSheet = false; cor = { f: {}, min: '', code: '' }; S = null; st = emptyState(); loaded = false; err = false; tab = 'home'; },
     state: function () { return st; },
     current: function () { return S && S.list && S.list[S.i] && (S.step === 'task' || S.step === 'fb') ? S.list[S.i].id : null; },
     step: function () { return S ? S.step : null; }

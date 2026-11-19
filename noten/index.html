@@ -354,6 +354,29 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 .dt-rv,.dt-try,.dt-iv{display:flex;gap:8px;flex-wrap:wrap}
 .dt-iv .inp{max-width:220px}
 .dt-pl{font-size:13.5px;padding:4px 0;border-top:1px solid var(--line)}
+.dt-pt{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.dt-pt:first-of-type{border-top:0}
+.dt-pn{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:800}
+.dt-pb p{margin:0 0 6px}
+.dt-pq{font-size:18px;font-weight:700;line-height:1.5}
+.dt-ph2{font-size:13.5px;color:var(--muted)}
+.dt-po{display:grid;gap:3px;margin:6px 0;font-size:17px}
+.dt-pbox{border:2px dashed var(--line);border-radius:12px;padding:10px 12px;font-size:18px;font-weight:600;line-height:1.7;margin:6px 0}
+.dt-pch{display:inline-block;border:1.5px solid var(--fg);border-radius:8px;padding:1px 8px;margin:2px}
+.dt-bl{display:inline-block;min-width:90px;border-bottom:2px solid var(--fg);height:1.1em;vertical-align:baseline;margin:0 4px}
+.dt-pb details{font-size:14px;margin-top:4px}
+.dt-pb summary{cursor:pointer;color:var(--accent);font-weight:700}
+.dt-cor{display:grid;gap:6px;margin:10px 0}
+.dt-crow{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding:6px 0}
+.dt-cn{font-weight:800;color:var(--muted)}
+.dt-ct{min-width:0;font-size:13.5px}
+.dt-ct span{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dt-cb{display:flex;gap:4px}
+.dt-cbt{width:42px;height:40px;border:2px solid var(--line);background:var(--surface);border-radius:10px;font-size:18px;cursor:pointer}
+.dt-cbt.on.g{background:var(--ok-bg);border-color:var(--ok)}
+.dt-cbt.on.y{background:color-mix(in srgb,var(--hl) 35%,transparent);border-color:var(--g3)}
+.dt-cbt.on.r{background:color-mix(in srgb,var(--g4) 20%,transparent);border-color:var(--g4)}
+@media print{body *{visibility:hidden}.dtsheet,.dtsheet *{visibility:visible}.dtsheet{position:absolute;left:0;top:0;width:100%}.dtno-print{display:none!important}.panel{border:0}}
 @media (max-width:420px){.dt-wt div{grid-template-columns:1fr}}
 </style>
 </head>

@@ -1,7 +1,7 @@
 /* deutsch.js: Deutschtraining (Realschule Bayern, Jahrgangsstufe 5)
    Inhalt: Aufgabenformate und Auswertung, Punkte, Wiederholungslogik (Leitner-Boxen), Wochenplan, Aufgaben von Woche 1.
-   Der Lehrplanbezug ist nur als Lernbereich angegeben (LehrplanPLUS Deutsch Realschule 5: Richtig schreiben, Sprache untersuchen).
-   Die genauen Kompetenzerwartungen bitte mit dem Unterricht abgleichen. */
+   Lehrplanbezug: LehrplanPLUS Realschule Bayern, Deutsch Jahrgangsstufe 5, Lernbereich 4 (4.2 Sprachliche Strukturen, 4.3 Richtig schreiben)
+   und Lernbereich 3.3 (Texte überarbeiten). Stand der Auswertung: Fachlehrplan Realschule 5 Deutsch, Abruf November 2026. */
 (function () {
   'use strict';
   var DT = { VERSION: 1 };
@@ -20,7 +20,7 @@
     { min: 11, l: 'Teilweise sicher', c: 'g3' },
     { min: 0, l: 'Weiter üben', c: 'g4' }
   ];
-  var LPR = 'Richtig schreiben: Groß- und Kleinschreibung', LPS = 'Sprache untersuchen: Wortarten', LPB = 'Sprache untersuchen: Satzbau und Satzglieder';
+  var LPR = 'D 4.3 Richtig schreiben: Groß- und Kleinschreibung (Artikelprobe, Satzanfang, Nomen)', LPS = 'D 4.2 Sprachliche Strukturen: Wortarten (Nomen, Verb, Adjektiv, Artikel, Pronomen)', LPB = 'D 4.2 Sprachliche Strukturen: Satzglieder, Satzbau, Satzarten';
   function sk(n, a, lp, tip) { return { n: n, a: a, lp: lp, tip: tip }; }
   DT.SKILLS = {
     'gk.nomen': sk('Nomen großschreiben', 'rs', LPR, 'Mach die Artikelprobe: Passt der, die oder das davor? Dann ist es ein Nomen und wird großgeschrieben.'),
@@ -227,13 +227,13 @@
     ]
   }];
   var NEXT = [
-    [2, 'Wortfamilien und Wortstamm, Dehnung (Doppelvokal, ie, h)', 'Satzglieder: Subjekt, Prädikat, Objekt'],
-    [3, 'Kurze Vokale: Doppelkonsonanten, ck, tz', 'Wortarten vertiefen, Zeitformen'],
-    [4, 'ä oder e, äu oder eu', 'Satzarten und Satzzeichen'],
-    [5, 'ss oder ß, das oder dass', 'Zeitformen: Präsens, Perfekt, Präteritum'],
-    [6, 'Zusammen- und Getrenntschreibung, Fremdwörter', 'Satzglieder, Attribute'],
-    [7, 'Zeichensetzung bei Aufzählungen und wörtlicher Rede', 'Wortbildung'],
-    [8, 'Wiederholung aller Rechtschreibregeln', 'Wiederholung aller Grammatikthemen']
+    [2, 'Wortfamilien, Wortstamm, Vor- und Nachsilben (ver-, vor-), zusammengesetzte Nomen', 'Satzglieder: Subjekt und Prädikat, Umstellprobe und Ersatzprobe'],
+    [3, 'Dehnung (Doppelvokal, ie, h) und kurze Vokale (Doppelkonsonanten, ck, tz)', 'Verben: Infinitiv, Personalform (Person, Zahl), Präsens'],
+    [4, 'S-Laute (s, ss, ß) und das oder dass', 'Zeitformen: Präteritum und Perfekt (Partizip II, unregelmäßige Verben)'],
+    [5, 'Ableiten (ä/e, äu/eu), Stammprinzip, englische Fremdwörter', 'Adjektive steigern, Fälle (Nominativ, Akkusativ, Dativ), Objekte, Artikel und Zahlwörter'],
+    [6, 'Wörtliche Rede und ihre Satzzeichen, Anredeform, Wörterbuch benutzen', 'Pronomen (persönlich, besitzanzeigend), Adverbien, Adverbiale des Ortes und der Zeit'],
+    [7, 'Komma bei Aufzählungen, Satzreihen und einfachen Satzgefügen', 'Hauptsatz und Nebensatz, Konjunktionen, Relativpronomen, Plusquamperfekt, Futur I'],
+    [8, 'Wiederholung: persönliche Fehlerschwerpunkte, Texte überarbeiten', 'Wiederholung aller Grammatikthemen']
   ];
   NEXT.forEach(function (x) { DT.WEEKS.push({ n: x[0], ready: false, title: x[1], rs: x[1], gr: x[2], days: [] }); });
 
@@ -426,6 +426,28 @@
       else if (i >= sk.length) break;
     }
     return list;
+  };
+  /* Ergebnis-Code aus der Korrektur, z. B. "DT1 min=24 m01=1 m02=0.5 m03=0 ..." (1 = richtig, 0,5 = teilweise, 0 = falsch) */
+  DT.parseCode = function (txt, list) {
+    var out = { ok: false, f: {}, min: null, err: '' };
+    var toks = String(txt || '').replace(/(\d),(\d)/g, '$1.$2').replace(/,/g, ' ').replace(/;/g, ' ').split(/\s+/).filter(Boolean);
+    if (toks[0] !== 'DT1') { out.err = 'Der Code muss mit DT1 beginnen.'; return out; }
+    toks.slice(1).forEach(function (t) {
+      var m = /^([a-z0-9]+)=([0-9]+(?:\.[0-9]+)?)$/i.exec(t.replace(',', '.')); if (!m) return;
+      if (m[1] === 'min') out.min = +m[2]; else if (+m[2] >= 0 && +m[2] <= 1) out.f[m[1]] = +m[2];
+    });
+    var miss = list.filter(function (u) { return out.f[u.id] == null; }).map(function (u) { return u.id; });
+    if (miss.length) { out.err = 'Es fehlen Ergebnisse für: ' + miss.join(', '); return out; }
+    out.ok = true; return out;
+  };
+  /* Wörter, die bei einer Aufgabe geübt wurden (für den Wörter-Lernstand) */
+  DT.wordsOfTask = function (ex, f) {
+    var w = {}, ok = f >= 0.999;
+    function mark(x) { if (DT.WORDMAP[x]) w[x] = ok; }
+    if (ex.t === 'gap') ex.gaps.forEach(function (g) { mark(g[0]); });
+    else if (ex.t === 'text') wordsIn(ex.sol[0]).forEach(mark);
+    else if (ex.t === 'fix') ex.errs.forEach(function (k) { mark(ex.right[k].replace(/[.!?,;:]+$/, '')); });
+    return w;
   };
   DT.estMinutes = function (list) { var s = 0; list.forEach(function (u) { s += EX[u.id].sec; }); return Math.round(s / 60); };
 })();
