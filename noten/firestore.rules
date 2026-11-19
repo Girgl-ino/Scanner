@@ -80,5 +80,25 @@ service cloud.firestore {
       allow delete: if admin()
         || (anwender() && resource.data.von == request.auth.uid);
     }
+
+    // Deutschtraining: ein Dokument pro Schüler (Dokument-ID = Konto des Schülers).
+    // Der Anwender liest und schreibt nur sein eigenes Dokument und darf Prüfvermerke ('review') und
+    // Einstellungen ('cfg') nicht ändern. Der Admin liest, ergänzt und löscht.
+    function dtGueltig(d) {
+      return d.keys().hasOnly(['v','start','done','days','srs','words','errors','texts','review','cfg'])
+        && d.v == 1;
+    }
+    match /dtrain/{uid} {
+      allow read: if admin() || (anwender() && request.auth.uid == uid);
+      allow create: if dtGueltig(request.resource.data)
+        && (admin()
+            || (anwender() && request.auth.uid == uid
+                && !request.resource.data.keys().hasAny(['review','cfg'])));
+      allow update: if dtGueltig(request.resource.data)
+        && (admin()
+            || (anwender() && request.auth.uid == uid
+                && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['review','cfg'])));
+      allow delete: if admin();
+    }
   }
 }
