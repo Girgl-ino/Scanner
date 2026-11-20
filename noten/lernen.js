@@ -82,7 +82,7 @@
     var f = findTermin(p);
     if (!f) return '<p class="dt-sub">📅 In der Noten-App ist dazu kein Termin eingetragen.</p>';
     if (f.ok) return '<p class="dt-sub">📅 Passt zum Termin in der Noten-App ✔</p>';
-    return '<div class="warnbox">📅 In der Noten-App steht die Schulaufgabe jetzt am <b>' + E(fd(f.t.datum)) + '</b>, der Plan hier rechnet mit ' + E(fd(p.termin)) + '.' + (C.isAdmin() ? ' <button class="btn small" type="button" data-a="replan" data-id="' + E(id) + '" data-d="' + E(f.t.datum) + '">Plan anpassen</button>' : ' Papa kann den Plan anpassen.') + '</div>';
+    return '<div class="warnbox">📅 In der Noten-App steht die Schulaufgabe jetzt am <b>' + E(fd(f.t.datum)) + '</b>, der Plan hier rechnet mit ' + E(fd(p.termin)) + (C.isAdmin() ? ' <button class="btn small" type="button" data-a="replan" data-id="' + E(id) + '" data-d="' + E(f.t.datum) + '">Plan anpassen</button>' : ' Papa kann den Plan anpassen.') + '</div>';
   }
   function replan(id, nd) {
     var p = pk()[id]; if (!p || !/^\d{4}-\d{2}-\d{2}$/.test(nd)) return;
