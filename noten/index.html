@@ -249,7 +249,7 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 .dtw h3{font-family:var(--f-display);font-size:17px;margin:0 0 8px}
 .dt-sub{color:var(--muted);font-size:13.5px;margin:4px 0 0}
 .dt-pad{padding:0 4px}
-.ln-h{margin:18px 2px 6px}.ln-f{margin:10px 2px 2px}.ln-rb{display:flex;gap:6px;margin-top:6px}.ln-pk .dt-bar{margin:6px 0}.dt-rules summary{cursor:pointer;font-size:15px}.dt-rules h3{margin:12px 0 4px;font-size:14px}.dt-rules ul{margin:0;padding-left:20px;font-size:14px;line-height:1.5}
+.ln-bd{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--info-bg);color:var(--muted);white-space:nowrap}.ln-x{background:var(--hl);color:#241c4f}.ln-lp{margin:6px 0;padding-left:18px;font-size:14px;line-height:1.5}.ln-h{margin:18px 2px 6px}.ln-f{margin:10px 2px 2px}.ln-rb{display:flex;gap:6px;margin-top:6px}.ln-pk .dt-bar{margin:6px 0}.dt-rules summary{cursor:pointer;font-size:15px}.dt-rules h3{margin:12px 0 4px;font-size:14px}.dt-rules ul{margin:0;padding-left:20px;font-size:14px;line-height:1.5}
 .dt-hero{display:flex;justify-content:space-between;gap:12px;align-items:center}
 .dt-streak{text-align:center;background:var(--hl);color:#241c4f;border-radius:16px;padding:8px 14px;line-height:1.1}
 .dt-streak b{font-family:var(--f-display);font-size:28px;display:block}
@@ -440,7 +440,7 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 
   <div id="msg" role="status" aria-live="polite"></div>
   <div id="toast" role="status" aria-live="polite" hidden></div>
-  <div class="foot"><span id="foot"></span><button class="btn small" type="button" id="logoutBtn">Abmelden</button></div>
+  <div class="foot"><span id="foot"></span><a class="btn small" href="../lern/">Zur Lern-App</a> <button class="btn small" type="button" id="logoutBtn">Abmelden</button></div>
 </div>
 
 <script src="jspdf.umd.min.js"></script>
@@ -492,7 +492,7 @@ catch (e) { db = getFirestore(app); }
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function fmt(n,d){return n.toFixed(d==null?2:d).replace('.',',')}
   function newId(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
-  var VERSION='9';
+  var VERSION='10';
   var toastT=null;
   function say(t){$('msg').textContent=t||''}
   function toast(t,ms){var el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){el.hidden=true},ms||5000)}
@@ -710,7 +710,7 @@ catch (e) { db = getFirestore(app); }
   });
 
   /* ---------- Deutschtraining anbinden ---------- */
-  LN.init({el:$('viewLernen'),esc:esc,today:today,toast:toast,isAdmin:isAdmin,
+  LN.init({el:$('viewLernen'),esc:esc,today:today,toast:toast,isAdmin:isAdmin,termine:function(){return D.termine.map(function(t){var f=fach(t.fach);return {id:t.id,fach:f?f.name:'',art:t.art,datum:t.datum,done:!!t.done,stoff:t.stoff||''}})},
     save:function(p){return setDoc(doc(db,'dtrain',USER_UID),Object.assign({v:1},p),{merge:true}).catch(function(e){toast('Speichern nicht erlaubt oder fehlgeschlagen. Sind die Datenbank-Regeln aktuell?')})}});
   DTUI.init({
     el:$('viewDeutsch'),esc:esc,today:today,toast:toast,isAdmin:isAdmin,name:vorname,studentUid:USER_UID,
@@ -1012,10 +1012,14 @@ catch (e) { db = getFirestore(app); }
       }).join('')+'</div>';
     }).join('');
   }
+  function lernZeile(t){
+    try{var f=fach(t.fach),pr=f&&LN.progressFor(f.name,t.datum);
+      return pr?'<div class="stoff">📚 Lernplan: '+pr.done+' von '+pr.n+' Blättern geschafft</div>':''}catch(e){return ''}
+  }
   function tcard(t){
     var n=dayDiff(t.datum),isA=armed['t'+t.id];
     return '<div class="tcard"><div class="cd '+cdClass(n)+'">'+esc(cdLabel(n))+'</div><div class="tbody"><div class="tt">'+terminTitle(t)+'</div><div class="tm">'+esc(wdLabel(t.datum))+(t.von&&t.von!==ui.me?' · von '+esc(vonLabel(t.von)):'')+'</div>'
-      +(t.stoff?'<div class="stoff">'+esc(t.stoff)+'</div>':'<div class="stoff none">Stoff noch nicht eingetragen</div>')
+      +(t.stoff?'<div class="stoff">'+esc(t.stoff)+'</div>':'<div class="stoff none">Stoff noch nicht eingetragen</div>')+lernZeile(t)
       +(canEditT(t)?'<div class="toolrow"><button class="btn small" type="button" data-act="t-edit" data-t="'+t.id+'">Ändern</button><button class="btn small danger'+(isA?' armed':'')+'" type="button" data-act="t-del" data-t="'+t.id+'">'+(isA?'Wirklich löschen?':'Löschen')+'</button></div>':'')+'</div></div>';
   }
   function renderTermine(){

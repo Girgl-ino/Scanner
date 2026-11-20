@@ -1,0 +1,26 @@
+{
+  "name": "Lern-App",
+  "short_name": "Lernen",
+  "description": "Lernen f\u00fcr Schulaufgaben und Deutsch \u00fcben.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f1ff",
+  "theme_color": "#6a4df4",
+  "icons": [
+    {
+      "src": "../noten/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../noten/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

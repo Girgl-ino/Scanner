@@ -28,10 +28,13 @@
       var b = o.blaetter[i], a = (b && b.a) || [];
       if (!b || !String(b.t || '').trim() || !Array.isArray(a) || !a.length || a.length > 30) return { err: 'Blatt ' + (i + 1) + ': Titel oder Aufgaben fehlen.' };
       for (var j = 0; j < a.length; j++) if (!a[j] || !String(a[j].q || '').trim()) return { err: 'Blatt ' + (i + 1) + ', Aufgabe ' + (j + 1) + ': Frage fehlt.' };
-      bl.push({ t: String(b.t).slice(0, 120), art: ART[b.art] ? b.art : 'ueben', a: a.map(function (x) { return { q: String(x.q).slice(0, 600), l: String(x.l || '').slice(0, 600) }; }) });
+      bl.push({ t: String(b.t).slice(0, 120), art: ART[b.art] ? b.art : 'ueben', a: a.map(function (x) { var o2 = { q: String(x.q).slice(0, 600), l: String(x.l || '').slice(0, 600) }; if (x.s) o2.s = String(x.s).slice(0, 40); if (x.x) o2.x = 1; return o2; }) });
     }
     var id = String(o.id || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 30) || ('p' + Date.now().toString(36));
     var p = { fach: f.slice(0, 40), typ: o.typ, titel: t.slice(0, 120), stoff: String(o.stoff || '').slice(0, 4000), blaetter: bl, created: today, res: {} };
+    if (Array.isArray(o.lp)) p.lp = o.lp.slice(0, 20).map(function (x) { return { k: String((x && x.k) || '').slice(0, 160), ok: x && x.ok ? 1 : 0, w: String((x && x.w) || '').slice(0, 80) }; }).filter(function (x) { return x.k; });
+    if (o.hinweis) p.hinweis = String(o.hinweis).slice(0, 1200);
+    if (o.quelle) p.quelle = String(o.quelle).slice(0, 200);
     if (o.typ === 'pruefung') {
       p.termin = o.termin;
       var last = addD(o.termin, -1), n = bl.length, days = Math.max(1, diff(today, last) + 1), plan = [], probe = bl.map(function (b, i) { return b.art === 'probe' ? i : -1; }).filter(function (i) { return i >= 0; });
@@ -59,14 +62,51 @@
     return h;
   }
 
+  function badge(x) { return x.x ? ' <span class="ln-bd ln-x">➕ Vertiefung</span>' : (x.s ? ' <span class="ln-bd">📖 ' + E(x.s) + '</span>' : ''); }
+
+  function lpHtml(p) {
+    if (!p.lp && !p.hinweis && !p.quelle) return '';
+    var h = '<details class="panel pad dt-rules dtno-print"><summary><b>🔎 Abgleich mit Lehrplan und Schulstoff</b></summary>';
+    if (p.quelle) h += '<p class="dt-sub">Quelle: ' + E(p.quelle) + '</p>';
+    if (p.lp) h += '<ul class="ln-lp">' + p.lp.map(function (x) { return '<li>' + (x.ok ? '✔' : '➕') + ' ' + E(x.k) + (x.w ? ' <span class="dt-sub">(' + E(x.w) + ')</span>' : '') + '</li>'; }).join('') + '</ul><p class="dt-sub">✔ = im ausgegebenen Schulstoff enthalten · ➕ = Vertiefung aus dem Lehrplan, ergänzt den Schulstoff und widerspricht ihm nicht.</p>';
+    if (p.hinweis) h += '<p style="white-space:pre-wrap;font-size:14px">' + E(p.hinweis) + '</p>';
+    return h + '</details>';
+  }
+
   function stoffHtml(p) { return p.stoff ? '<details class="panel pad dt-rules dtno-print"><summary><b>📖 Das Wichtigste zum Nachschlagen</b></summary><p style="white-space:pre-wrap;font-size:14px;line-height:1.5">' + E(p.stoff) + '</p></details>' : ''; }
+
+  function terms() { try { return (C.termine && C.termine()) || []; } catch (e) { return []; } }
+  function findTermin(p) { var r = terms().filter(function (t) { return t.fach === p.fach && t.art === 'sa'; }); var ex = r.filter(function (t) { return t.datum === p.termin; })[0]; if (ex) return { t: ex, ok: 1 }; var near = r.filter(function (t) { return !t.done && diff(C.today(), t.datum) >= 0; }).sort(function (a, b) { return Math.abs(diff(p.termin, a.datum)) - Math.abs(diff(p.termin, b.datum)); })[0]; return near ? { t: near, ok: 0 } : null; }
+  function terminHinweis(p, id) {
+    if (!terms().length) return '';
+    var f = findTermin(p);
+    if (!f) return '<p class="dt-sub">📅 In der Noten-App ist dazu kein Termin eingetragen.</p>';
+    if (f.ok) return '<p class="dt-sub">📅 Passt zum Termin in der Noten-App ✔</p>';
+    return '<div class="warnbox">📅 In der Noten-App steht die Schulaufgabe jetzt am <b>' + E(fd(f.t.datum)) + '</b>, der Plan hier rechnet mit ' + E(fd(p.termin)) + '.' + (C.isAdmin() ? ' <button class="btn small" type="button" data-a="replan" data-id="' + E(id) + '" data-d="' + E(f.t.datum) + '">Plan anpassen</button>' : ' Papa kann den Plan anpassen.') + '</div>';
+  }
+  function replan(id, nd) {
+    var p = pk()[id]; if (!p || !/^\d{4}-\d{2}-\d{2}$/.test(nd)) return;
+    var t = C.today(), last = addD(nd, -1), open = []; p.blaetter.forEach(function (b, i) { if (!done(p, i)) open.push(i); });
+    var days = Math.max(1, diff(t, last) + 1), plan = (p.plan || []).slice(), n = open.length;
+    open.forEach(function (i, k) { plan[i] = addD(t, Math.min(days - 1, Math.floor(k * days / Math.max(1, n)))); });
+    open.forEach(function (i) { if (p.blaetter[i].art === 'probe') plan[i] = last > t ? last : t; });
+    var u = {}; u[id] = { termin: nd, plan: plan }; save({ pk: u });
+  }
+  function offeneTermine() {
+    var all = pk(), have = Object.keys(all).map(function (i) { return all[i]; });
+    return terms().filter(function (t) { return !t.done && diff(C.today(), t.datum) >= 0 && !have.some(function (p) { return p.fach === t.fach && p.termin === t.datum; }); }).sort(function (a, b) { return a.datum < b.datum ? -1 : 1; });
+  }
+  function abgleichHtml() {
+    var o = offeneTermine(); if (!o.length) return '';
+    return '<div class="panel pad"><h3>📅 Aus der Noten-App</h3><p class="dt-sub">Für diese Prüfungen gibt es noch kein Lernpaket:</p>' + o.map(function (t) { return '<p><b>' + E(t.fach) + '</b> · ' + E(t.art === 'sa' ? 'Schulaufgabe' : t.art === 'ex' ? 'Ex' : t.art) + ' am ' + E(fd(t.datum)) + ' (noch ' + diff(C.today(), t.datum) + ' Tage)' + (t.stoff ? '<br><span class="dt-sub">Stoff: ' + E(t.stoff) + '</span>' : '') + '</p>'; }).join('') + (C.isAdmin() ? '<p class="dt-sub">Fotos vom Lernstoff an Claude schicken. Daraus entsteht das Paket.</p>' : '<p class="dt-sub">Papa schickt Fotos vom Stoff an Claude, dann erscheint hier dein Lernplan.</p>') + '</div>';
+  }
 
   function homeHtml() {
     var all = pk(), ids = Object.keys(all), adm = C.isAdmin(), h = '';
     h += '<div class="panel pad dt-hero"><div><h2>Lernen</h2><p class="dt-sub">Aufgaben ablesen, auf Papier schreiben, Foto an Papa.</p></div></div>';
     var pr = ids.filter(function (i) { return all[i].typ === 'pruefung'; }).sort(function (a, b) { return all[a].termin < all[b].termin ? -1 : 1; });
     var up = pr.filter(function (i) { return diff(C.today(), all[i].termin) >= 0; }), old = pr.filter(function (i) { return diff(C.today(), all[i].termin) < 0; });
-    h += '<h3 class="ln-h">📝 Prüfungsvorbereitung</h3>' + (up.length ? up.map(function (i) { return packCard(i, all[i], adm); }).join('') : '<div class="panel pad"><p class="dt-sub">Noch keine Prüfung geplant.</p></div>');
+    h += abgleichHtml() + '<h3 class="ln-h">📝 Prüfungsvorbereitung</h3>' + (up.length ? up.map(function (i) { return packCard(i, all[i], adm); }).join('') : '<div class="panel pad"><p class="dt-sub">Noch keine Prüfung geplant.</p></div>');
     var lr = ids.filter(function (i) { return all[i].typ === 'lernen'; }), fa = {};
     lr.forEach(function (i) { (fa[all[i].fach] = fa[all[i].fach] || []).push(i); });
     h += '<h3 class="ln-h">📚 Hauptfächer lernen und festigen</h3>';
@@ -85,7 +125,7 @@
 
   function packHtml(id) {
     var p = pk()[id]; if (!p) return '<p>Nicht gefunden.</p>';
-    var adm = C.isAdmin(), h = '<button class="btn small dtno-print" type="button" data-a="back">← Zurück</button><div class="panel pad"><div class="dt-meta">' + E(p.fach) + '</div><h2>' + E(p.titel) + '</h2>' + (p.typ === 'pruefung' ? '<p class="dt-sub">Schulaufgabe ' + E(fd(p.termin)) + '</p>' : '') + '</div>' + stoffHtml(p);
+    var adm = C.isAdmin(), h = '<button class="btn small dtno-print" type="button" data-a="back">← Zurück</button><div class="panel pad"><div class="dt-meta">' + E(p.fach) + '</div><h2>' + E(p.titel) + '</h2>' + (p.typ === 'pruefung' ? '<p class="dt-sub">Schulaufgabe ' + E(fd(p.termin)) + '</p>' + terminHinweis(p, id) : '') + '</div>' + stoffHtml(p) + lpHtml(p);
     p.blaetter.forEach(function (b, i) {
       var r = p.res[sheetKey(p, i)], st = r ? (acc(r) >= 0.8 ? '✔ ' + Math.round(acc(r) * 100) + ' %' : '↻ ' + Math.round(acc(r) * 100) + ' %, nochmal üben') : (p.plan ? 'empfohlen ' + fd(p.plan[i]) : 'offen');
       h += '<div class="panel pad"><div class="dt-meta">' + (ART[b.art] || '') + ' · ' + E(st) + (r && fresh(p, i) === false && acc(r) >= 0.8 ? ' · zum Auffrischen' : '') + '</div><b>' + E(b.t) + '</b> <span class="dt-sub">(' + b.a.length + ' Aufgaben)</span>' + (adm && ms[id + ':' + i] ? '<div class="dt-sub">💬 Maximilian: ' + E(DTMS.text(ms[id + ':' + i])) + '</div>' : '') + '<div><button class="btn small" type="button" data-a="open" data-id="' + E(id) + '" data-i="' + i + '">Anzeigen</button>' +
@@ -99,7 +139,7 @@
     var p = pk()[id]; if (!p) return '';
     var b = p.blaetter[i], h = '<div class="dtno-print"><button class="btn small" type="button" data-a="pack" data-id="' + E(id) + '">← Zurück</button> <button class="btn small" type="button" data-a="print">🖨 Drucken</button></div>' + stoffHtml(p);
     h += '<div class="panel pad dtsheet"><div class="dt-meta">' + E(p.fach) + ' · ' + (ART[b.art] || '') + '</div><h2>' + E(b.t) + '</h2><p class="dt-sub">Schreibe die Lösungen auf Papier. Nummer vor jede Antwort schreiben. Name und Datum oben aufs Blatt.</p>';
-    b.a.forEach(function (x, k) { h += '<div class="dt-pt"><b>' + (k + 1) + '.</b> ' + E(x.q) + '</div>'; });
+    b.a.forEach(function (x, k) { h += '<div class="dt-pt"><b>' + (k + 1) + '.</b><div>' + E(x.q) + badge(x) + '</div></div>'; });
     h += '</div>';
     var mk = id + ':' + i;
     if (!C.isAdmin()) { if (md.key !== mk) md = { key: mk, min: ms[mk] && ms[mk].min ? String(ms[mk].min) : '', g: ms[mk] ? ms[mk].g : 0, n: ms[mk] && ms[mk].n ? ms[mk].n : '' }; h += DTMS.form(E, md, ms[mk]); }
@@ -132,6 +172,7 @@
     if (a === 'open') view = { t: 'sheet', id: id, i: i };
     else if (a === 'pack') view = { t: 'pack', id: id };
     else if (a === 'back') view = { t: 'home' };
+    else if (a === 'replan') { replan(id, b.getAttribute('data-d')); C.toast('Plan angepasst.'); }
     else if (a === 'print') { window.print(); return; }
     else if (a === 'cor') view = { t: 'cor', id: id, i: i };
     else if (a === 'msg') md.g = +b.getAttribute('data-v');
@@ -164,6 +205,7 @@
     init: function (ctx) { C = ctx; el = ctx.el; el.addEventListener('click', onClick); el.addEventListener('input', function (e) { var t = e.target; if (!t.dataset) return; if (t.dataset.ms === 'min') md.min = t.value; else if (t.dataset.ms === 'n') md.n = t.value; }); },
     setData: function (data) { ln = (data && data.ln) || {}; ms = (data && data.ms) || {}; loaded = true; if (el && !el.hidden) render(); },
     data: function () { return ln; },
+    progressFor: function (fach, datum) { var all = pk(), k = Object.keys(all).filter(function (i) { return all[i].typ === 'pruefung' && all[i].fach === fach && all[i].termin === datum; })[0]; if (!k) return null; var p = all[k]; return { titel: p.titel, done: cnt(p), n: p.blaetter.length }; },
     render: render,
     parse: parse,
     reset: function () { ln = {}; ms = {}; md = { key: '', min: '', g: 0, n: '' }; loaded = false; view = { t: 'home' }; sel = {}; armed = null; msg = ''; }
